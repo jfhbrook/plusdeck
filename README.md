@@ -26,6 +26,8 @@ On a modern PC without a 5.25" drive or an RS-232 port, you will need:
 
 ## Running the Original Software
 
+**Update:** I've been informed the software works in Windows 11??
+
 First, you will need to set up Windows XP in Virtualbox. The directions I followed are here:
 
 <https://eprebys.faculty.ucdavis.edu/2020/04/08/installing-windows-xp-in-virtualbox-or-other-vm/>
