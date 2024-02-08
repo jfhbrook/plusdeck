@@ -1,0 +1,10 @@
+*.pyc
+dist/*
+build/*
+.cache
+.eggs
+.python-version
+plusdeck_client.egg-info/
+.tox/
+venv
+.env

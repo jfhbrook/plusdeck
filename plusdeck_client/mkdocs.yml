@@ -1,0 +1,7 @@
+site_name: plusdeck_client
+
+theme:
+  name: bootstrap386
+
+plugins:
+  - mkdocstrings
