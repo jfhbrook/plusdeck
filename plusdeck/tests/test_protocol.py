@@ -4,7 +4,7 @@ from unittest.mock import call
 
 import pytest
 
-from plusdeck_client import Command, Side, State
+from plusdeck import Command, Side, State
 
 
 @pytest.mark.parametrize(

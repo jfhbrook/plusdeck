@@ -4,7 +4,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from plusdeck_client import PlusDeckProtocol
+from plusdeck import PlusDeckProtocol
 
 
 @pytest.fixture

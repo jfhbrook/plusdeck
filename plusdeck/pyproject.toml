@@ -3,7 +3,7 @@ requires = ["setuptools", "setuptools-scm", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "plusdeck_client"
+name = "plusdeck"
 version = "1.0.0"
 authors = [
   {name = "Josh Holbrook", email = "josh.holbrook@gmail.com"}
@@ -36,17 +36,17 @@ dev = [
 
 [tool.isort]
 profile = "appnexus"
-known_application = "plusdeck_client"
+known_application = "plusdeck"
 
 [tool.pyright]
-include = ["plusdeck_client", "tests"]
+include = ["plusdeck", "tests"]
 
 [tool.pytest]
 addopts = "--verbose -s"
 testpaths = [ "tests" ]
 
 [tool.setuptools]
-packages = [ "plusdeck_client" ]
+packages = [ "plusdeck" ]
 
 [tool.setuptools.dynamic]
 dependencies = { file = ["requirements.txt"] }

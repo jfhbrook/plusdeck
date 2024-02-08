@@ -4,7 +4,7 @@ build/*
 .cache
 .eggs
 .python-version
-plusdeck_client.egg-info/
+plusdeck.egg-info/
 .tox/
 venv
 .env
