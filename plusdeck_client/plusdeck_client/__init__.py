@@ -165,7 +165,6 @@ class PlusDeckProtocol(asyncio.Protocol):
             code = state.value
             raise StateError(f"Unhandled state: {code}", code)
 
-    # Called when any state is received
     def on_state(self, state: State):
         """The Plus Deck has emitted its state."""
         pass
