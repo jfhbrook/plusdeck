@@ -11,7 +11,7 @@ A client library for the Plus Deck 2C PC Cassette Drive.
 """
 
 # TODO: Make sure the Plus Deck works reliably at this baud rate.
-# See: https://github.com/pyserial/pyserial/blob/7aeea35429d15f3eefed10bbb659674638903e3a/serial/rfc2217.py#L381
+# See: https://github.com/pyserial/pyserial/blob/7aeea35429d15f3eefed10bbb659674638903e3a/serial/rfc2217.py#L381  # noqa
 BAUD_RATE = 115200
 
 
@@ -108,8 +108,7 @@ class PlusDeckProtocol(asyncio.Protocol):
                 self._on_state(state)
 
     def _on_state(self, state: State):
-        previous = state
-        self.state = state
+        previous = self.state
 
         # When turning off, what I've observed is that we always receive
         # exactly one pause event. I'm not entirely sure it's reliable, but
@@ -123,8 +122,10 @@ class PlusDeckProtocol(asyncio.Protocol):
         sent_off = self._sent_off
         self._sent_off = False
 
-        if sent_off and state == State.PausedOnA or state == State.PausedOnB:
+        if sent_off and (state == State.PausedOnA or state == State.PausedOnB):
             state = State.Off
+
+        self.state = state
 
         # Emit a "ready" event immediately.
         #
@@ -134,10 +135,11 @@ class PlusDeckProtocol(asyncio.Protocol):
             self.on_ready()
 
         # Emit the state no matter what it is
-        self.on_state(self.state)
+        self.on_state(state)
 
-        # We only emit on state *changes*.
-        if state == previous or state == State.Ready:
+        # We only emit on state *changes*, excepting for when we thought
+        # state was off.
+        if (state == previous and state != State.Off) or state == State.Ready:
             return
 
         if state == State.PlayingA:

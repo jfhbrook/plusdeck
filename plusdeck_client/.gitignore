@@ -8,3 +8,4 @@ plusdeck_client.egg-info/
 .tox/
 venv
 .env
+.ipynb_checkpoints

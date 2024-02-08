@@ -22,6 +22,7 @@ dev = [
   "flake8",
   "flake8-black",
   "pytest",
+  "pytest-asyncio",
   "black",
   "isort",
   "jupyterlab",
