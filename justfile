@@ -75,6 +75,10 @@ test:
   . ./venv/bin/activate && pytest ./tests
   @just _clean-test
 
+# Run integration tests (for what they are)
+integration:
+  . ./venv/bin/activate && python ./int-test.py
+
 _clean-test:
   rm -f pytest_runner-*.egg
   rm -rf tests/__pycache__
