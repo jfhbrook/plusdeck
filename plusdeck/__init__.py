@@ -2,7 +2,7 @@
 
 import asyncio
 from enum import Enum
-from typing import Any, cast, Dict, Tuple
+from typing import Any, cast, Dict, Optional, Tuple, Type
 
 from serial_asyncio import create_serial_connection, SerialTransport
 
@@ -203,11 +203,14 @@ class PlusDeckProtocol(asyncio.Protocol):
 
 
 async def create_connection(
-    loop: asyncio.AbstractEventLoop,
     url: str,
+    protocol: Type[PlusDeckProtocol],
     *args: Tuple[Any, ...],
+    loop: Optional[asyncio.AbstractEventLoop] = None,
     baudrate: int = BAUD_RATE,
     **kwargs: Dict[str, Any],
 ) -> Tuple[SerialTransport, PlusDeckProtocol]:
+    _loop = loop if loop else asyncio.get_running_loop()
     kwargs["baudrate"] = cast(Any, baudrate)
-    return await create_serial_connection(loop, PlusDeckProtocol, url, *args, **kwargs)
+
+    return await create_serial_connection(_loop, protocol, url, *args, **kwargs)
