@@ -9,6 +9,8 @@ from serial_asyncio import SerialTransport
 
 from plusdeck import Command, State
 
+TEST_TIMEOUT = 0.01
+
 
 @pytest.mark.asyncio
 async def test_online(client):
@@ -22,7 +24,7 @@ async def test_online(client):
         )
     )
 
-    await asyncio.wait_for(client._connection_made, timeout=1)
+    await asyncio.wait_for(client._connection_made, timeout=TEST_TIMEOUT)
 
 
 @pytest.mark.parametrize(
@@ -178,7 +180,7 @@ async def test_once(client):
 async def test_wait_for(client, state):
     """Waits for a given state."""
 
-    fut = client.wait_for(state, timeout=1)
+    fut = client.wait_for(state, timeout=TEST_TIMEOUT)
 
     client.data_received(state.value.to_bytes())
 
@@ -199,7 +201,7 @@ async def test_listen_when_closed(client):
     client._transport.write.side_effect = emit_ready
 
     # Giddyup
-    rcv = await asyncio.wait_for(client.listen(), timeout=1)
+    rcv = await asyncio.wait_for(client.listen(), timeout=TEST_TIMEOUT)
 
     assert rcv in set(client.receivers())
 
@@ -216,7 +218,7 @@ async def test_listen_when_listening(client):
 
     client.state = State.Ejected
 
-    rcv = await asyncio.wait_for(client.listen(), timeout=1)
+    rcv = await asyncio.wait_for(client.listen(), timeout=TEST_TIMEOUT)
 
     assert rcv in set(client.receivers())
     client._transport.assert_not_called()
@@ -237,11 +239,11 @@ async def test_receive_state(client, buffer, state):
 
     client.state = State.Ejected
 
-    rcv = await asyncio.wait_for(client.listen(), timeout=1)
+    rcv = await asyncio.wait_for(client.listen(), timeout=TEST_TIMEOUT)
 
     assert rcv in set(client.receivers())
 
-    fut = asyncio.wait_for(rcv.get(), timeout=1)
+    fut = asyncio.wait_for(rcv.get(), timeout=TEST_TIMEOUT)
 
     client.data_received(buffer)
 
@@ -253,18 +255,18 @@ async def test_receive_duplicate_state(client):
     """Receives a state once."""
     client.state = State.Ejected
 
-    rcv = await asyncio.wait_for(client.listen(), timeout=1)
+    rcv = await asyncio.wait_for(client.listen(), timeout=TEST_TIMEOUT)
 
     assert rcv in set(client.receivers())
 
-    fut = asyncio.wait_for(rcv.get(), timeout=0.1)
+    fut = asyncio.wait_for(rcv.get(), timeout=TEST_TIMEOUT)
 
     client.data_received(b"\x32")
 
     assert (await fut) == State.Stopped
     assert client.state == State.Stopped
 
-    fut2 = asyncio.wait_for(rcv.get(), timeout=0.1)
+    fut2 = asyncio.wait_for(rcv.get(), timeout=TEST_TIMEOUT)
 
     client.data_received(b"\x32")
 
@@ -285,10 +287,10 @@ async def test_many_receivers(client):
 
     client._transport.write.side_effect = emit_ready
 
-    ready = client.wait_for(State.Ready, timeout=1)
+    ready = client.wait_for(State.Ready, timeout=TEST_TIMEOUT)
 
     # Create first receiver before listening
-    rcv1 = await asyncio.wait_for(client.listen(), timeout=1)
+    rcv1 = await asyncio.wait_for(client.listen(), timeout=TEST_TIMEOUT)
 
     assert rcv1 in set(client.receivers())
 
@@ -296,24 +298,24 @@ async def test_many_receivers(client):
     await ready
 
     # Create second receiver after listening
-    rcv2 = await asyncio.wait_for(client.listen(), timeout=1)
+    rcv2 = await asyncio.wait_for(client.listen(), timeout=TEST_TIMEOUT)
 
     assert rcv1 in set(client.receivers())
     assert rcv2 in set(client.receivers())
 
-    ejected = client.wait_for(State.Ejected, timeout=1)
+    ejected = client.wait_for(State.Ejected, timeout=TEST_TIMEOUT)
     client.data_received(b"\x3c")
     await ejected
 
     # Should have two states from first receiver
-    state1a = await asyncio.wait_for(rcv1.get(), timeout=1)
-    state1b = await asyncio.wait_for(rcv1.get(), timeout=1)
+    state1a = await asyncio.wait_for(rcv1.get(), timeout=TEST_TIMEOUT)
+    state1b = await asyncio.wait_for(rcv1.get(), timeout=TEST_TIMEOUT)
 
     assert state1a == State.Ready
     assert state1b == State.Ejected
 
     # Should have one state from second receiver
-    state2 = await asyncio.wait_for(rcv2.get(), timeout=1)
+    state2 = await asyncio.wait_for(rcv2.get(), timeout=TEST_TIMEOUT)
 
     assert state2 == State.Ejected
 
@@ -322,7 +324,7 @@ async def test_many_receivers(client):
 async def test_remove_receiver(client):
     client.state = State.Ejected
 
-    rcv = await asyncio.wait_for(client.listen(), timeout=1)
+    rcv = await asyncio.wait_for(client.listen(), timeout=TEST_TIMEOUT)
 
     assert rcv in set(client.receivers())
 
@@ -340,12 +342,12 @@ async def test_close(client, buffer):
 
     client.state = State.Ejected
 
-    rcv = await asyncio.wait_for(client.listen(), timeout=1)
+    rcv = await asyncio.wait_for(client.listen(), timeout=TEST_TIMEOUT)
 
     assert rcv in set(client.receivers())
 
-    fut_wait_for = client.wait_for(State.Closed, timeout=1)
-    fut_get = asyncio.wait_for(rcv.get(), timeout=1)
+    fut_wait_for = client.wait_for(State.Closed, timeout=TEST_TIMEOUT)
+    fut_get = asyncio.wait_for(rcv.get(), timeout=TEST_TIMEOUT)
 
     client.send(Command.Close)
     client.data_received(buffer)
@@ -356,7 +358,7 @@ async def test_close(client, buffer):
     assert (await fut_get) == State.Closed
 
     with pytest.raises(asyncio.TimeoutError):
-        await asyncio.wait_for(rcv.get(), timeout=0.1)
+        await asyncio.wait_for(rcv.get(), timeout=TEST_TIMEOUT)
 
 
 @pytest.mark.skip
@@ -384,7 +386,7 @@ async def test_iter_receiver(client, buffer):
 
     client.state = State.Ejected
 
-    rcv = await asyncio.wait_for(client.listen(), timeout=1)
+    rcv = await asyncio.wait_for(client.listen(), timeout=TEST_TIMEOUT)
 
     assert rcv in set(client.receivers())
 
@@ -404,6 +406,6 @@ async def test_iter_receiver(client, buffer):
 
         assert len(list(client.receivers())) == 0
 
-    fut = asyncio.wait_for(iterate(), timeout=1)
+    fut = asyncio.wait_for(iterate(), timeout=TEST_TIMEOUT)
 
     await fut
