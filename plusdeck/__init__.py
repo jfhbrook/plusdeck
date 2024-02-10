@@ -10,11 +10,6 @@ from serial_asyncio import create_serial_connection, SerialTransport
 A client library for the Plus Deck 2C PC Cassette Drive.
 """
 
-# TODO: Make sure the Plus Deck works reliably at this baud rate.
-# See: https://github.com/pyserial/pyserial/blob/7aeea35429d15f3eefed10bbb659674638903e3a/serial/rfc2217.py#L381  # noqa
-BAUD_RATE = 115200
-
-
 class Command(Enum):
     """A Plus Deck 2C command."""
 
@@ -207,10 +202,9 @@ async def create_connection(
     protocol: Type[PlusDeckProtocol],
     *args: Tuple[Any, ...],
     loop: Optional[asyncio.AbstractEventLoop] = None,
-    baudrate: int = BAUD_RATE,
     **kwargs: Dict[str, Any],
 ) -> Tuple[SerialTransport, PlusDeckProtocol]:
     _loop = loop if loop else asyncio.get_running_loop()
-    kwargs["baudrate"] = cast(Any, baudrate)
+    kwargs["baudrate"] = cast(Any, 9600)
 
     return await create_serial_connection(_loop, protocol, url, *args, **kwargs)
