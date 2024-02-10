@@ -58,12 +58,12 @@ _clean-compile:
 
 # Format with black and isort
 format:
-  . ./venv/bin/activate &&  black './plusdeck_client' ./tests
-  . ./venv/bin/activate &&  isort --settings-file . './plusdeck_client' ./tests
+  . ./venv/bin/activate &&  black './plusdeck' ./tests
+  . ./venv/bin/activate &&  isort --settings-file . './plusdeck' ./tests
 
 # Lint with flake8
 lint:
-  . ./venv/bin/activate && flake8 './plusdeck_client' ./tests
+  . ./venv/bin/activate && flake8 './plusdeck' ./tests
   . ./venv/bin/activate && validate-pyproject ./pyproject.toml
 
 # Check type annotations with pyright
@@ -137,6 +137,6 @@ publish: build upload
 
 # Clean up loose files
 clean: _clean-venv _clean-compile _clean-test _clean-tox
-  rm -rf plusdeck_client.egg-info
-  rm -f plusdeck_client/*.pyc
-  rm -rf plusdeck_client/__pycache__
+  rm -rf plusdeck.egg-info
+  rm -f plusdeck/*.pyc
+  rm -rf plusdeck/__pycache__
