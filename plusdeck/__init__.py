@@ -2,13 +2,15 @@
 
 import asyncio
 from enum import Enum
-from typing import Any, cast, Dict, Optional, Tuple, Type
+from typing import Optional, Tuple, Type
 
+from serial import EIGHTBITS, PARITY_NONE, STOPBITS_ONE
 from serial_asyncio import create_serial_connection, SerialTransport
 
 """
 A client library for the Plus Deck 2C PC Cassette Drive.
 """
+
 
 class Command(Enum):
     """A Plus Deck 2C command."""
@@ -198,13 +200,18 @@ class PlusDeckProtocol(asyncio.Protocol):
 
 
 async def create_connection(
-    url: str,
     protocol: Type[PlusDeckProtocol],
-    *args: Tuple[Any, ...],
+    url: str,
     loop: Optional[asyncio.AbstractEventLoop] = None,
-    **kwargs: Dict[str, Any],
 ) -> Tuple[SerialTransport, PlusDeckProtocol]:
     _loop = loop if loop else asyncio.get_running_loop()
-    kwargs["baudrate"] = cast(Any, 9600)
 
-    return await create_serial_connection(_loop, protocol, url, *args, **kwargs)
+    return await create_serial_connection(
+        _loop,
+        protocol,
+        url,
+        baudrate=9600,
+        bytesize=EIGHTBITS,
+        parity=PARITY_NONE,
+        stopbits=STOPBITS_ONE,
+    )
