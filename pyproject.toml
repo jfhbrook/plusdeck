@@ -13,7 +13,9 @@ readme = "README.md"
 keywords = []
 license = { text = "MIT" }
 dependencies = [
-  "pyserial-asyncio"
+  "pyee",
+  "pyserial-asyncio",
+  "rich"
 ]
 
 

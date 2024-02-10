@@ -1,19 +1,21 @@
 # -*- coding: utf-8 -*-
 
 import asyncio
+from collections.abc import AsyncGenerator
 from enum import Enum
-from typing import Optional, Tuple, Type
+from typing import Callable, Iterable, Optional, Set, Union
 
+from pyee.asyncio import AsyncIOEventEmitter
 from serial import EIGHTBITS, PARITY_NONE, STOPBITS_ONE
 from serial_asyncio import create_serial_connection, SerialTransport
 
 """
-A client library for the Plus Deck 2C PC Cassette Drive.
+A client library for the Plus Deck 2C PC Cassette Deck.
 """
 
 
 class Command(Enum):
-    """A Plus Deck 2C command."""
+    """A command for the Plus Deck 2C PC Cassette Deck."""
 
     PlaySideA = b"\x01"
     PlaySideB = b"\x02"
@@ -22,13 +24,12 @@ class Command(Enum):
     TogglePause = b"\x05"
     Stop = b"\x06"
     Eject = b"\x08"
-    # TODO: I don't like these command names.
-    On = b"\x0b"
-    Off = b"\x0c"
+    Listen = b"\x0b"
+    Close = b"\x0c"
 
 
 class State(Enum):
-    """A Plus Deck 2C state."""
+    """The state of the Plus Deck 2C PC Cassette Deck."""
 
     PlayingA = 0x0A
     PausedOnB = 0x0C
@@ -39,7 +40,7 @@ class State(Enum):
     Rewinding = 0x28
     Stopped = 0x32
     Ejected = 0x3C
-    Off = 0x00
+    Closed = 0x00
 
 
 class Side(Enum):
@@ -65,24 +66,67 @@ class StateError(ValueError):
         self.code = code
 
 
-class PlusDeckProtocol(asyncio.Protocol):
-    """An asyncio Protocol for the Plus Deck 2C PC Cassette Drive."""
+Handler = Callable[[State], None]
+StateHandler = Callable[[], None]
+
+
+class Receiver(asyncio.Queue):
+    """Receive state change events from the Plus Deck 2C PC Cassette Deck."""
+
+    _client: "Client"
+
+    def __init__(self, client: "Client", maxsize=0):
+        super().__init__(maxsize)
+        self._client = client
+
+    async def __aiter__(self) -> AsyncGenerator[State, None]:
+        """Iterate over state change events."""
+
+        while True:
+            state = await self.get()
+
+            yield state
+
+            if state == State.Closed:
+                self.close()
+                break
+
+    def close(self) -> None:
+        """Close the receiver."""
+        self._client._receivers.remove(self)
+
+
+class Client(asyncio.Protocol):
+    """A client for the Plus Deck 2C PC Cassette Deck."""
 
     state: State
+    events: AsyncIOEventEmitter
+    _loop: asyncio.AbstractEventLoop
     _transport: SerialTransport | None
-    _sent_off: bool
+    _sent_close: bool
+    _connection_made: asyncio.Future[None]
+    _receivers: Set[Receiver]
 
-    def __init__(self):
-        self._sent_off = False
-        self.state = State.Off
+    def __init__(
+        self,
+        loop: Optional[asyncio.AbstractEventLoop] = None,
+    ):
+        _loop = loop if loop else asyncio.get_running_loop()
+
+        self.state = State.Closed
+        self.events = AsyncIOEventEmitter(_loop)
+        self._loop = _loop
+        self._sent_close = False
+        self._online = self._loop.create_future()
 
     def connection_made(self, transport: asyncio.BaseTransport):
         if not isinstance(transport, SerialTransport):
             raise ConnectionError("Transport is not a SerialTransport")
 
         self._transport = transport
+        self._connection_made.set_result(None)
 
-    def send_command(self, command: Command):
+    def send(self, command: Command):
         """Send a command to the Plus Deck 2C."""
 
         if not self._transport:
@@ -90,10 +134,10 @@ class PlusDeckProtocol(asyncio.Protocol):
 
         self._transport.write(command.value)
 
-        if command == Command.Off:
-            self._sent_off = True
+        if command == Command.Close:
+            self._sent_close = True
         else:
-            self._sent_off = False
+            self._sent_close = False
 
     def data_received(self, data):
         for code in data:
@@ -116,102 +160,122 @@ class PlusDeckProtocol(asyncio.Protocol):
         # there are an unspecified number of events, we will need to resort to
         # timeouts.
 
-        sent_off = self._sent_off
-        self._sent_off = False
+        sent_close = self._sent_close
+        self._sent_close = False
 
-        if sent_off and (state == State.PausedOnA or state == State.PausedOnB):
-            state = State.Off
+        if sent_close and (state == State.PausedOnA or state == State.PausedOnB):
+            state = State.Closed
 
         self.state = state
 
-        # Emit a "ready" event immediately.
-        #
-        # What I've observed is that we get exactly one "ready" event.
-        # However, I still debounce the event just in case.
-        if state == State.Ready and previous != State.Ready:
-            self.on_ready()
+        # Emit the state every time
+        self.events.emit("state", state)
 
-        # Emit the state no matter what it is
-        self.on_state(state)
+        # Only receive state changes
+        if state != previous:
+            for rcv in self._receivers:
+                self._loop.create_task(rcv.put(state))
 
-        # We only emit on state *changes*, excepting for when we thought
-        # state was off.
-        if (state == previous and state != State.Off) or state == State.Ready:
-            return
+    def on(self, state: State, f: StateHandler) -> Handler:
+        """Call an event handler on a given state."""
 
-        if state == State.PlayingA:
-            self.on_play(Side.A)
-        elif state == State.PausedOnB:
-            self.on_pause(Side.B)
-        elif state == State.PlayingB:
-            self.on_play(Side.B)
-        elif state == State.PausedOnA:
-            self.on_pause(Side.A)
-        elif state == State.FastForwarding:
-            self.on_fast_forward()
-        elif state == State.Rewinding:
-            self.on_rewind()
-        elif state == State.Stopped:
-            self.on_stop()
-        elif state == State.Ejected:
-            self.on_eject()
-        elif state == State.Off:
-            self.on_off()
-        else:
-            # Should be unreachable.
-            code = state.value
-            raise StateError(f"Unhandled state: {code}", code)
+        return self.listens_to(state)(f)
 
-    def on_state(self, state: State):
-        """The Plus Deck has emitted its state."""
-        pass
+    def listens_to(self, state: State) -> Callable[[StateHandler], Handler]:
+        """Decorate an event handler to be called on a given state."""
 
-    def on_ready(self):
-        """The Plus Deck is ready."""
-        pass
+        want = state
 
-    def on_play(self, side: Side):
-        """The Plus Deck has started playing."""
-        pass
+        def decorator(f: StateHandler) -> Handler:
+            def handler(state: State) -> None:
+                if state == want:
+                    f()
 
-    def on_pause(self, side: Side):
-        """The Plus Deck has been paused."""
-        pass
+            return self.events.add_listener("state", handler)
 
-    def on_stop(self):
-        """The Plus Deck has stopped."""
-        pass
+        return decorator
 
-    def on_fast_forward(self):
-        """The Plus Deck is fast-forwarding."""
-        pass
+    def once(self, state: State, f: StateHandler) -> Handler:
+        """Call an event handler on a given state once."""
 
-    def on_rewind(self):
-        """The Plus Deck is rewinding."""
-        pass
+        return self.listens_once(state)(f)
 
-    def on_eject(self):
-        """The Plus Deck has ejected."""
-        pass
+    def listens_once(self, state: State) -> Callable[[StateHandler], Handler]:
+        """Decorate an event handler to be called once a given state occurs."""
 
-    def on_off(self):
-        """The Plus Deck has been turned off."""
-        pass
+        want = state
+
+        def decorator(f: StateHandler) -> Handler:
+            def handler(state: State) -> None:
+                if state == want:
+                    f()
+                    self.events.remove_listener("state", handler)
+
+            return self.events.add_listener("state", handler)
+
+        return decorator
+
+    def wait_for(
+        self, state: State, timeout: Optional[int] = None
+    ) -> asyncio.Future[None]:
+        """Wait for a given state to emit."""
+
+        fut = asyncio.ensure_future(
+            asyncio.wait_for(self._loop.create_future(), timeout=timeout)
+        )
+
+        @self.listens_once(state)
+        def listener() -> None:
+            fut.set_result(None)
+
+        self.events.on("state", listener)
+
+        return fut
+
+    async def listen(self, maxsize: int = 0) -> Receiver:
+        """Listen for state changes."""
+
+        rcv = Receiver(client=self, maxsize=maxsize)
+        self._receivers.add(rcv)
+
+        if self.state == State.Closed:
+            self.send(Command.Listen)
+            await self.wait_for(State.Ready)
+            self.events.emit("listen")
+
+        return rcv
+
+    def receivers(self) -> Iterable[Receiver]:
+        """Currently active receivers."""
+
+        return self._receivers
+
+    async def close(self) -> None:
+        """Stop listening for state changes."""
+
+        self.send(Command.Close)
+
+        @self.listens_once(State.Closed)
+        def listener():
+            self.events.emit("close")
 
 
 async def create_connection(
-    protocol: Type[PlusDeckProtocol],
     url: str,
     loop: Optional[asyncio.AbstractEventLoop] = None,
-) -> Tuple[SerialTransport, PlusDeckProtocol]:
+) -> Client:
     _loop = loop if loop else asyncio.get_running_loop()
 
-    return await create_serial_connection(
+    _, client = await create_serial_connection(
         _loop,
-        protocol,
+        lambda: Client(_loop),
         url,
         baudrate=9600,
         bytesize=EIGHTBITS,
         parity=PARITY_NONE,
         stopbits=STOPBITS_ONE,
     )
+
+    await client._online
+
+    return client
