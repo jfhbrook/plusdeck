@@ -28,6 +28,7 @@ class Command(Enum):
     Close = b"\x0c"
 
 
+# TODO: State for not ready
 class State(Enum):
     """The state of the Plus Deck 2C PC Cassette Deck."""
 
@@ -85,15 +86,18 @@ class Receiver(asyncio.Queue):
         while True:
             state = await self.get()
 
-            yield state
+            if state != State.Closed:
+                yield state
+                continue
 
-            if state == State.Closed:
-                self.close()
-                break
+            break
 
-    def close(self) -> None:
-        """Close the receiver."""
-        self._client._receivers.remove(self)
+    def remove(self) -> None:
+        """Remove a receiver."""
+        try:
+            self._client._receivers.remove(self)
+        except KeyError:
+            pass
 
 
 class Client(asyncio.Protocol):
@@ -167,6 +171,9 @@ class Client(asyncio.Protocol):
         if sent_close and (state == State.PausedOnA or state == State.PausedOnB):
             state = State.Closed
 
+        # TODO: If we sent a close and it didn't close, should we throw an
+        # error?
+
         self.state = state
 
         # Emit the state every time
@@ -177,11 +184,15 @@ class Client(asyncio.Protocol):
             for rcv in self._receivers:
                 self._loop.create_task(rcv.put(state))
 
+        if state == State.Closed:
+            self._receivers = set()
+
     def on(self, state: State, f: StateHandler) -> Handler:
         """Call an event handler on a given state."""
 
         return self.listens_to(state)(f)
 
+    # TODO: listening is currently overloaded hard core.
     def listens_to(self, state: State) -> Callable[[StateHandler], Handler]:
         """Decorate an event handler to be called on a given state."""
 
@@ -252,6 +263,11 @@ class Client(asyncio.Protocol):
 
     async def close(self) -> None:
         """Stop listening for state changes."""
+
+        # TODO: Should we throw or simulate an idempotent close?
+        if self.state == State.Closed:
+            self._receivers = set()
+            return
 
         self.send(Command.Close)
 
