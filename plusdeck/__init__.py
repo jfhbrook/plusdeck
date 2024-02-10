@@ -3,7 +3,7 @@
 import asyncio
 from collections.abc import AsyncGenerator
 from enum import Enum
-from typing import Callable, Iterable, Optional, Set, Union
+from typing import Callable, Iterable, Optional, Set
 
 from pyee.asyncio import AsyncIOEventEmitter
 from serial import EIGHTBITS, PARITY_NONE, STOPBITS_ONE
@@ -117,7 +117,8 @@ class Client(asyncio.Protocol):
         self.events = AsyncIOEventEmitter(_loop)
         self._loop = _loop
         self._sent_close = False
-        self._online = self._loop.create_future()
+        self._connection_made = self._loop.create_future()
+        self._receivers = set()
 
     def connection_made(self, transport: asyncio.BaseTransport):
         if not isinstance(transport, SerialTransport):
@@ -220,9 +221,7 @@ class Client(asyncio.Protocol):
     ) -> asyncio.Future[None]:
         """Wait for a given state to emit."""
 
-        fut = asyncio.ensure_future(
-            asyncio.wait_for(self._loop.create_future(), timeout=timeout)
-        )
+        fut = self._loop.create_future()
 
         @self.listens_once(state)
         def listener() -> None:
@@ -230,7 +229,7 @@ class Client(asyncio.Protocol):
 
         self.events.on("state", listener)
 
-        return fut
+        return asyncio.ensure_future(asyncio.wait_for(fut, timeout=timeout))
 
     async def listen(self, maxsize: int = 0) -> Receiver:
         """Listen for state changes."""
@@ -239,8 +238,9 @@ class Client(asyncio.Protocol):
         self._receivers.add(rcv)
 
         if self.state == State.Closed:
+            fut = self.wait_for(State.Ready)
             self.send(Command.Listen)
-            await self.wait_for(State.Ready)
+            await fut
             self.events.emit("listen")
 
         return rcv
