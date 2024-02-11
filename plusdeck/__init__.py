@@ -205,7 +205,7 @@ class Client(asyncio.Protocol):
 
         self.state = state
 
-        if state == State.Subscribed:
+        if state != previous and state == State.Subscribed:
             self.events.emit("subscribed")
 
         # Emit the state every time
@@ -213,7 +213,10 @@ class Client(asyncio.Protocol):
 
         # Only receive state changes
         if state != previous:
-            for rcv in self._receivers:
+            if state == State.Unsubscribed:
+                self.events.emit("unsubscribed")
+
+            for rcv in list(self._receivers):
                 self._loop.create_task(rcv.put(state))
 
         if state == State.Unsubscribed:
@@ -310,10 +313,6 @@ class Client(asyncio.Protocol):
         # Wait until subscribed in order to avoid whacky state
         if self.state == State.Subscribing:
             await self.wait_for(State.Subscribed)
-
-        @self.listens_once(State.Unsubscribed)
-        def listener():
-            self.events.emit("unsubscribed")
 
         self.send(Command.Unsubscribe)
 

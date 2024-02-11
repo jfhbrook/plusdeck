@@ -14,7 +14,7 @@ TEST_TIMEOUT = 0.01
 
 @pytest.mark.asyncio
 async def test_online(client: Client):
-    """The client comes online when the connection is made."""
+    """Comes online when the connection is made."""
 
     client.connection_made(
         SerialTransport(
@@ -33,7 +33,7 @@ async def test_online(client: Client):
 )
 @pytest.mark.asyncio
 async def test_command(client: Client, command: Command, code: bytes):
-    """Commands are sent to the transport."""
+    """Sends Commands to the transport."""
     client.send(command)
     assert client._transport is not None
     cast(Mock, client._transport.write).assert_called_with(code)
@@ -48,8 +48,8 @@ async def test_command(client: Client, command: Command, code: bytes):
     ],
 )
 @pytest.mark.asyncio
-async def test_events(client: Client, state: State, data: bytes):
-    """Events are emitted."""
+async def test_state_events(client: Client, state: State, data: bytes):
+    """Emits the state event."""
 
     client.state = State.Subscribed
 
@@ -64,6 +64,62 @@ async def test_events(client: Client, state: State, data: bytes):
     client.data_received(data + data)
 
     assert received and received == state
+
+
+@pytest.mark.asyncio
+async def test_subscription_events(client: Client):
+    """Emits subscription events."""
+
+    # Expecting a subscribed state
+    client.state = State.Subscribing
+
+    handler = Mock(name="handler")
+    subscribed_handler = Mock(name="subscribe_handler")
+    unsubscribed_handler = Mock(name="unsubscribe_handler")
+
+    client.events.on("subscribed", handler)
+    client.events.on("subscribed", subscribed_handler)
+    client.events.on("state", handler)
+    client.events.on("unsubscribed", handler)
+    client.events.on("unsubscribed", unsubscribed_handler)
+
+    # Receive subscribed state
+    client.data_received(b"\x15")
+
+    assert client.state == State.Subscribed
+
+    # Receive playing state
+    client.data_received(b"\x0a")
+
+    assert client.state == State.PlayingA
+
+    # Expect a pause state to signal unsubscribed
+    client.send(Command.Unsubscribe)
+
+    assert client.state == State.Unsubscribing
+
+    # Receive pause state
+    client.data_received(b"\x0c")
+
+    assert client.state == State.Unsubscribed
+
+    # Did our events fire in order?
+    handler.assert_has_calls(
+        [
+            # Subscribe
+            call(),
+            call(State.Subscribed),
+            call(State.PlayingA),
+            call(State.Unsubscribing),
+            call(State.Unsubscribed),
+            # Unsubscribe
+            call(),
+        ]
+    )
+
+    # Did the right events fire?
+    subscribed_handler.assert_called_once()
+    unsubscribed_handler.assert_called_once()
 
 
 @pytest.mark.asyncio
@@ -354,14 +410,14 @@ async def test_many_receivers(client: Client):
 
 
 @pytest.mark.asyncio
-async def test_unsubscribe_receiver(client: Client):
+async def test_close_receiver(client: Client):
     client.state = State.Ejected
 
     rcv = await asyncio.wait_for(client.subscribe(), timeout=TEST_TIMEOUT)
 
     assert rcv in set(client.receivers())
 
-    rcv.unsubscribe()
+    rcv.close()
 
     assert len(client.receivers()) == 0
 
@@ -548,7 +604,7 @@ async def test_session_iterator(client: Client):
         async for state in rcv:
             states.append(state)
             if len(states) == 3:
-                rcv.unsubscribe()
+                rcv.close()
 
     await asyncio.wait_for(unsubbed, timeout=TEST_TIMEOUT)
 
