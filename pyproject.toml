@@ -15,7 +15,6 @@ license = { text = "MIT" }
 dependencies = [
   "pyee",
   "pyserial-asyncio",
-  "rich"
 ]
 
 
@@ -31,6 +30,7 @@ dev = [
   "mkdocs",
   "mkdocs-bootstrap386",
   "mkdocstrings[python]",
+  "rich",
   "tox",
   "twine",
   "validate-pyproject[all]",
