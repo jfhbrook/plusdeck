@@ -469,7 +469,7 @@ async def test_iter_receiver(client: Client, buffer: bytes):
     client.send(Command.Unsubscribe)
     client.data_received(buffer)
 
-    states = [None, State.Unsubscribing, State.PlayingA, State.Stopped]
+    states = [State.Unsubscribed, State.Unsubscribing, State.PlayingA, State.Stopped]
 
     async def iterate():
         async for state in rcv:
