@@ -2,7 +2,7 @@ import asyncio
 from collections.abc import Awaitable
 from inspect import getmembers, isfunction
 import sys
-from typing import Any, Callable, cast, Protocol, Set, Union
+from typing import Callable, cast, Protocol, Set, Union
 
 from rich.prompt import Prompt
 
@@ -59,7 +59,7 @@ def mark(tag: str) -> Callable[[Test], MarkedTest]:
     def decorator(test: Test) -> MarkedTest:
         marked = cast(MarkedTest, test)
 
-        if not hasattr(test, 'marks'):
+        if not hasattr(test, "marks"):
             marked.marks = set()
 
         marked.marks.add(tag)
