@@ -46,7 +46,7 @@ class Command(Enum):
     PlayB = b"\x02"
     FastForward = b"\x03"
     Rewind = b"\x04"
-    TogglePause = b"\x05"
+    Pause = b"\x05"
     Stop = b"\x06"
     Eject = b"\x08"
     Subscribe = b"\x0b"
@@ -70,10 +70,10 @@ class State(Enum):
     """The state of the Plus Deck 2C PC Cassette Deck."""
 
     PlayingA = 0x0A
-    PausedB = 0x0C
+    PausedA = 0x0C
     PlayingB = 0x14
     Subscribed = 0x15
-    PausedA = 0x16
+    PausedB = 0x16
     FastForwarding = 0x1E
     Rewinding = 0x28
     Stopped = 0x32
@@ -165,6 +165,11 @@ class Client(asyncio.Protocol):
 
         self._transport = transport
         self._connection_made.set_result(None)
+
+    def close(self) -> None:
+        if not self._transport:
+            raise ConnectionError("Can not close uninitialized connection")
+        self._transport.close()
 
     def send(self, command: Command):
         """Send a command to the Plus Deck 2C."""

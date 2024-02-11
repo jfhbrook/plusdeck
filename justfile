@@ -77,7 +77,7 @@ test:
 
 # Run integration tests (for what they are)
 integration:
-  . ./venv/bin/activate && python ./int-test.py
+  . ./venv/bin/activate && python ./tests/integration.py
 
 _clean-test:
   rm -f pytest_runner-*.egg

@@ -34,10 +34,10 @@ Statuses are emitted in a relatively tight loop as individual bytes:
 | byte (hex) | byte (binary) | status           |
 |------------|---------------|------------------|
 | 0A         | 0000 1010     | playing side A   |
-| 0C         | 0000 1100     | paused on side B |
+| 0C         | 0000 1100     | paused on side A |
 | 14         | 0001 0100     | playing side B   |
 | 15         | 0001 0101     | ready            |
-| 16         | 0001 0110     | paused on side A |
+| 16         | 0001 0110     | paused on side B |
 | 1E         | 0001 1110     | fast-forwarding  |
 | 28         | 0010 1000     | rewinding        |
 | 32         | 0011 0010     | stopped          |
@@ -51,8 +51,9 @@ Unlike commands, there doesn't seem to be an obvious rhyme or reason to the
 ordering of the statuses. I'm wondering if bits have individual meaning, but
 it's not penciling out:
 
-1. `PLAY_A & PAUSE_A == 0x02` and `PLAY_B & PAUSE_B == 0x04` - that suggests
-   the 2nd and 3rd bits may be side A and side B respectively
+1. `PLAY_A & PAUSE_A == 0x08` and `PLAY_B & PAUSE_B == 0x14` - I don't think
+   this implies anything. Though, pause is always 2 more than the corresponding
+   play state.
 2. `PLAY_A & PLAY_B  == 0x00` and `PAUSE_A & PAUSE_B == 0x04` - that suggests
    no byte for the side, and also that the hunch on bits for sides isn't
    panning out.

@@ -143,7 +143,7 @@ async def test_listens_to(client: Client):
     assert call_count == 1
     assert client.state == State.PlayingA
 
-    client.data_received(b"\x16")
+    client.data_received(b"\x0c")
 
     assert call_count == 1
     assert client.state == State.PausedA
@@ -171,7 +171,7 @@ async def test_on(client: Client):
     assert call_count == 1
     assert client.state == State.PlayingA
 
-    client.data_received(b"\x16")
+    client.data_received(b"\x0c")
 
     assert call_count == 1
     assert client.state == State.PausedA
@@ -203,7 +203,7 @@ async def test_listens_once(client: Client):
     assert call_count == 1
     assert client.state == State.PlayingA
 
-    client.data_received(b"\x16")
+    client.data_received(b"\x0c")
 
     assert call_count == 1
     assert client.state == State.PausedA
@@ -235,7 +235,7 @@ async def test_once(client: Client):
     assert call_count == 1
     assert client.state == State.PlayingA
 
-    client.data_received(b"\x16")
+    client.data_received(b"\x0c")
 
     assert call_count == 1
     assert client.state == State.PausedA
