@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import asyncio
-from typing import cast, Optional
-from unittest.mock import Mock
+from typing import cast, List, Optional
+from unittest.mock import call, Mock
 
 import pytest
 from serial_asyncio import SerialTransport
@@ -480,3 +480,88 @@ async def test_iter_receiver(client: Client, buffer: bytes):
     fut = asyncio.wait_for(iterate(), timeout=TEST_TIMEOUT)
 
     await fut
+
+
+@pytest.mark.asyncio
+async def test_session_queue(client: Client):
+    client.state = State.Unsubscribed
+
+    received = [State.PausedA, State.PlayingA, State.Subscribed]
+
+    # When transport write is called, simulate receiving State.Subscribed
+    def emit_data(_):
+        client.data_received(received.pop().to_bytes())
+
+    assert client._transport is not None
+    cast(Mock, client._transport.write).side_effect = emit_data
+
+    state1: Optional[State] = None
+    state2: Optional[State] = None
+    state3: Optional[State] = None
+
+    unsubbed = client.wait_for(State.Unsubscribed)
+
+    async with client.session() as rcv:
+        client.send(Command.PlayA)
+
+        state1 = await asyncio.wait_for(rcv.get(), timeout=TEST_TIMEOUT)
+        state2 = await asyncio.wait_for(rcv.get(), timeout=TEST_TIMEOUT)
+        state3 = await asyncio.wait_for(rcv.get(), timeout=TEST_TIMEOUT)
+
+    await asyncio.wait_for(unsubbed, timeout=TEST_TIMEOUT)
+
+    cast(Mock, client._transport.write).assert_has_calls(
+        [
+            call(Command.Subscribe.to_bytes()),
+            call(Command.PlayA.to_bytes()),
+            call(Command.Unsubscribe.to_bytes()),
+        ]
+    )
+
+    assert [state1, state2, state3] == [
+        State.Subscribing,
+        State.Subscribed,
+        State.PlayingA,
+    ]
+
+
+@pytest.mark.asyncio
+async def test_session_iterator(client: Client):
+    client.state = State.Unsubscribed
+
+    received = [State.PausedA, State.PlayingA, State.Subscribed]
+
+    # When transport write is called, simulate receiving State.Subscribed
+    def emit_data(_):
+        client.data_received(received.pop().to_bytes())
+
+    assert client._transport is not None
+    cast(Mock, client._transport.write).side_effect = emit_data
+
+    states: List[State] = []
+
+    unsubbed = client.wait_for(State.Unsubscribed)
+
+    async with client.session() as rcv:
+        client.send(Command.PlayA)
+
+        async for state in rcv:
+            states.append(state)
+            if len(states) == 3:
+                rcv.unsubscribe()
+
+    await asyncio.wait_for(unsubbed, timeout=TEST_TIMEOUT)
+
+    cast(Mock, client._transport.write).assert_has_calls(
+        [
+            call(Command.Subscribe.to_bytes()),
+            call(Command.PlayA.to_bytes()),
+            call(Command.Unsubscribe.to_bytes()),
+        ]
+    )
+
+    assert states == [
+        State.Subscribing,
+        State.Subscribed,
+        State.PlayingA,
+    ]

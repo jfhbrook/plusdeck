@@ -2,6 +2,7 @@
 
 import asyncio
 from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 from enum import Enum
 from typing import Callable, List, Optional, Set, Type
 
@@ -105,15 +106,20 @@ class Receiver(asyncio.Queue):
     """Receive state change events from the Plus Deck 2C PC Cassette Deck."""
 
     _client: "Client"
+    _unsubscribe: asyncio.Future[None]
 
     def __init__(self, client: "Client", maxsize=0):
         super().__init__(maxsize)
         self._client = client
+        self._unsubscribe = client._loop.create_future()
 
     async def __aiter__(self) -> AsyncGenerator[State, None]:
         """Iterate over state change events."""
 
         while True:
+            if self._unsubscribe.done():
+                break
+
             state = await self.get()
 
             # TODO: Should iterator emit silenced state?
@@ -125,6 +131,9 @@ class Receiver(asyncio.Queue):
 
     def unsubscribe(self) -> None:
         """Unsubscribe from state changes."""
+        if not self._unsubscribe.cancelled():
+            self._unsubscribe.set_result(None)
+
         try:
             self._client._receivers.remove(self)
         except KeyError:
@@ -309,6 +318,15 @@ class Client(asyncio.Protocol):
             self.events.emit("unsubscribed")
 
         self.send(Command.Unsubscribe)
+
+    @asynccontextmanager
+    async def session(self):
+        rcv = await self.subscribe()
+        try:
+            yield rcv
+        finally:
+            print("WHY CLOSED??")
+            await self.unsubscribe()
 
 
 async def create_connection(
