@@ -7,7 +7,7 @@ from unittest.mock import call, Mock
 import pytest
 from serial_asyncio import SerialTransport
 
-from plusdeck import Client, Command, State, SubscriptionError
+from plusdeck.client import Client, Command, State, SubscriptionError
 
 TEST_TIMEOUT = 0.01
 

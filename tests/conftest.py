@@ -4,7 +4,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from plusdeck import Client, State
+from plusdeck.client import Client, State
 
 
 @pytest.fixture
