@@ -344,6 +344,37 @@ async def test_receive_state(client: Client, buffer, state):
     assert (await fut) == state
 
 
+@pytest.mark.parametrize(
+    "buffer,state",
+    [
+        (state.to_bytes(), state)
+        for state in State
+        if state
+        not in {
+            State.Ejected,
+            State.Subscribing,
+            State.Unsubscribing,
+            State.Unsubscribed,
+        }
+    ],
+)
+@pytest.mark.asyncio
+async def test_expect_state(client: Client, buffer, state):
+    """Expect a state."""
+
+    client.state = State.Ejected
+
+    rcv = await asyncio.wait_for(client.subscribe(), timeout=TEST_TIMEOUT)
+
+    assert rcv in set(client.receivers())
+
+    fut = asyncio.wait_for(rcv.expect(state), timeout=TEST_TIMEOUT)
+
+    client.data_received(buffer)
+
+    await fut
+
+
 @pytest.mark.asyncio
 async def test_receive_duplicate_state(client: Client):
     """Receives a state once."""

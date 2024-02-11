@@ -91,90 +91,68 @@ async def test_commands_and_events():
     def log_state(state: State) -> None:
         print(f"# {state}")
 
-    async with client.session():
-        w1 = client.wait_for(State.Stopped)
-
+    async with client.session() as rcv:
         manual_action("Put a tape in the deck")
 
-        await w1
-
-        w2 = client.wait_for(State.Rewinding)
+        await rcv.expect(State.Stopped)
 
         client.send(Command.Rewind)
 
-        await w2
-
-        await client.wait_for(State.Stopped)
-
-        w3 = client.wait_for(State.PlayingA)
+        await rcv.expect(State.Rewinding)
+        await rcv.expect(State.Stopped)
 
         client.send(Command.PlayA)
 
-        await w3
+        await rcv.expect(State.PlayingA)
 
         assert manual_test(
             "Did the deck rewind and start playing side A?"
         ), "Deck is playing side A"
 
-        w4 = client.wait_for(State.PausedA)
-
         client.send(Command.Pause)
 
-        await w4
+        await rcv.expect(State.PausedA)
 
         assert manual_test("Did the deck pause?"), "Deck is paused on side A"
 
-        w5 = client.wait_for(State.PlayingA)
-
         client.send(Command.Pause)
 
-        await w5
+        await rcv.expect(State.PlayingA)
 
         assert manual_test(
             "Did the deck start playing side A again?"
         ), "Deck is playing side A"
 
-        w6 = client.wait_for(State.FastForwarding)
-
         client.send(Command.FastForward)
 
-        await w6
-
-        await client.wait_for(State.Stopped)
-
-        w7 = client.wait_for(State.PlayingB)
+        await rcv.expect(State.FastForwarding)
+        await rcv.expect(State.Stopped)
 
         client.send(Command.PlayB)
 
-        await w7
+        await rcv.expect(State.PlayingB)
 
         assert manual_test(
             "Did the deck fast-forward and start playing side B?"
         ), "Deck is playing side B"
 
-        w8 = client.wait_for(State.PausedB)
-
         client.send(Command.Pause)
 
-        await w8
+        await rcv.expect(State.PausedB)
 
         assert manual_test("Did the deck pause?"), "Deck is paused on side A"
 
-        w9 = client.wait_for(State.PlayingB)
-
         client.send(Command.Pause)
 
-        await w9
+        await rcv.expect(State.PlayingB)
 
         assert manual_test(
             "Did the deck start playing side B again?"
         ), "Deck is playing side B"
 
-        w10 = client.wait_for(State.Ejected)
-
         client.send(Command.Eject)
 
-        await w10
+        await rcv.expect(State.Ejected)
 
         assert manual_test("Did the deck eject the tape?"), "Deck has ejected"
 

@@ -113,6 +113,13 @@ class Receiver(asyncio.Queue):
         self._client = client
         self._receiving = True
 
+    async def expect(self, state: State) -> None:
+        """Receive state changes until the expected state."""
+        current = await self.get()
+
+        while current != state:
+            current = await self.get()
+
     async def __aiter__(self) -> AsyncGenerator[State, None]:
         """Iterate over state change events."""
 
