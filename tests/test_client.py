@@ -7,7 +7,7 @@ from unittest.mock import Mock
 import pytest
 from serial_asyncio import SerialTransport
 
-from plusdeck import Client, Command, State
+from plusdeck import Client, Command, State, SubscriptionError
 
 TEST_TIMEOUT = 0.01
 
@@ -29,7 +29,7 @@ async def test_online(client: Client):
 
 @pytest.mark.parametrize(
     "command,code",
-    [(Command.PlayA, b"\x01"), (Command.Unsubscribe, b"\x0c")],
+    [(command, command.to_bytes()) for command in Command],
 )
 @pytest.mark.asyncio
 async def test_command(client: Client, command: Command, code: bytes):
@@ -44,12 +44,14 @@ async def test_command(client: Client, command: Command, code: bytes):
     [
         (state, state.to_bytes())
         for state in State
-        if state not in {State.Waiting, State.Unsubscribing, State.Unsubscribed}
+        if state not in {State.Subscribing, State.Unsubscribing, State.Unsubscribed}
     ],
 )
 @pytest.mark.asyncio
 async def test_events(client: Client, state: State, data: bytes):
     """Events are emitted."""
+
+    client.state = State.Subscribed
 
     received: Optional[State] = None
 
@@ -92,7 +94,7 @@ async def test_listens_to(client: Client):
 
 
 @pytest.mark.asyncio
-async def tests_on(client: Client):
+async def test_on(client: Client):
     """Calls handler on state."""
 
     call_count = 0
@@ -188,7 +190,7 @@ async def test_once(client: Client):
     [
         state
         for state in State
-        if state not in {State.Waiting, State.Unsubscribing, State.Unsubscribed}
+        if state not in {State.Subscribing, State.Unsubscribing, State.Unsubscribed}
     ],
 )
 @pytest.mark.asyncio
@@ -228,17 +230,19 @@ async def test_subscribe_when_unsubscribed(client: Client):
     assert client.state == State.Subscribed
 
 
+@pytest.mark.parametrize("state", [State.Ejected, State.Subscribed])
 @pytest.mark.asyncio
-async def test_subscribe_when_subscribed(client):
+async def test_subscribe_when_subscribed(client: Client, state: State):
     """Creates receiver when already subscribed."""
 
-    client.state = State.Ejected
+    client.state = state
 
     rcv = await asyncio.wait_for(client.subscribe(), timeout=TEST_TIMEOUT)
 
     assert rcv in set(client.receivers())
-    client._transport.assert_not_called()
-    assert client.state == State.Ejected
+    assert client._transport is not None
+    cast(Mock, client._transport.write).assert_not_called()
+    assert client.state == state
 
 
 @pytest.mark.parametrize(
@@ -247,7 +251,12 @@ async def test_subscribe_when_subscribed(client):
         (state.to_bytes(), state)
         for state in State
         if state
-        not in {State.Ejected, State.Waiting, State.Unsubscribing, State.Unsubscribed}
+        not in {
+            State.Ejected,
+            State.Subscribing,
+            State.Unsubscribing,
+            State.Unsubscribed,
+        }
     ],
 )
 @pytest.mark.asyncio
@@ -333,7 +342,7 @@ async def test_many_receivers(client: Client):
     state1c = await asyncio.wait_for(rcv1.get(), timeout=TEST_TIMEOUT)
 
     assert [state1a, state1b, state1c] == [
-        State.Waiting,
+        State.Subscribing,
         State.Subscribed,
         State.Ejected,
     ]
@@ -387,20 +396,56 @@ async def test_unsubscribe(client: Client, buffer):
         await asyncio.wait_for(rcv.get(), timeout=TEST_TIMEOUT)
 
 
-@pytest.mark.skip
-def test_failed_unsubscribe(client: Client):
-    """Throws an error if client fails to unsubscribe."""
-
-
 @pytest.mark.parametrize(
-    "buffer", [state.to_bytes() for state in {State.PausedA, State.PausedB}]
+    "state",
+    [
+        state
+        for state in State
+        if state
+        not in {
+            State.PausedA,
+            State.PausedB,
+            State.Subscribing,
+            State.Unsubscribing,
+            State.Unsubscribed,
+        }
+    ],
 )
 @pytest.mark.asyncio
-@pytest.mark.skip
-async def test_unsubscribe_when_unsubscribed(client: Client, buffer: bytes):
+async def test_failed_unsubscribe(client: Client, state: State):
+    """Raises an error if client fails to unsubscribe."""
+
+    client.state = State.Unsubscribing
+
+    with pytest.raises(SubscriptionError):
+        client.data_received(state.to_bytes())
+
+
+@pytest.mark.parametrize("state", [State.Unsubscribing, State.Unsubscribed])
+@pytest.mark.asyncio
+async def test_unsubscribe_when_unsubscribed(client: Client, state: State):
     """Unsubscribes when already unsubscribed."""
 
-    pass
+    client.state = state
+
+    await client.unsubscribe()
+
+
+@pytest.mark.asyncio
+async def test_unsubscribe_when_unsubscribing(client: Client):
+    """Unsubscribes when already unsubscribed."""
+
+    client.state = State.Subscribing
+
+    fut = client.unsubscribe()
+
+    # Send subscribing event
+    client.data_received(b"\x15")
+
+    await fut
+
+    assert client._transport is not None
+    cast(Mock, client._transport.write).assert_called_with(b"\x0c")
 
 
 @pytest.mark.parametrize(

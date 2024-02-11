@@ -14,6 +14,30 @@ A client library for the Plus Deck 2C PC Cassette Deck.
 """
 
 
+class PlusDeckError(Exception):
+    """An error in the Plus Deck 2C PC Cassette Deck client."""
+
+    pass
+
+
+class ConnectionError(PlusDeckError):
+    """A connection error."""
+
+    pass
+
+
+class StateError(PlusDeckError):
+    """An error with the Plus Deck 2c PC Cassette Deck's state."""
+
+    pass
+
+
+class SubscriptionError(StateError):
+    """An error involving subscribing or unsubscribing."""
+
+    pass
+
+
 class Command(Enum):
     """A command for the Plus Deck 2C PC Cassette Deck."""
 
@@ -26,6 +50,19 @@ class Command(Enum):
     Eject = b"\x08"
     Subscribe = b"\x0b"
     Unsubscribe = b"\x0c"
+
+    @classmethod
+    def from_bytes(cls: Type["Command"], buffer: bytes) -> List["Command"]:
+        return [Command(code.to_bytes(length=1, byteorder="little")) for code in buffer]
+
+    @classmethod
+    def from_byte(cls: Type["Command"], buffer: bytes) -> "Command":
+        if len(buffer) != 1:
+            raise ValueError("Can not convert multiple bytes into a single Command")
+        return cls.from_bytes(buffer)[0]
+
+    def to_bytes(self: "Command") -> bytes:
+        return self.value
 
 
 class State(Enum):
@@ -40,7 +77,7 @@ class State(Enum):
     Rewinding = 0x28
     Stopped = 0x32
     Ejected = 0x3C
-    Waiting = -1
+    Subscribing = -1
     Unsubscribing = -2
     Unsubscribed = -3
 
@@ -50,29 +87,14 @@ class State(Enum):
 
     @classmethod
     def from_byte(cls: Type["State"], buffer: bytes) -> "State":
-        assert len(buffer) == 1, "Can not convert multiple bytes to a single State"
+        if len(buffer) != 1:
+            raise ValueError("Can not convert multiple bytes to a single State")
         return cls.from_bytes(buffer)[0]
 
     def to_bytes(self: "State") -> bytes:
         if self.value < 0:
             raise ValueError(f"Can not convert {self} to bytes")
         return self.value.to_bytes()
-
-
-class ConnectionError(Exception):
-    """A connection error."""
-
-    pass
-
-
-class StateError(ValueError):
-    """A state error."""
-
-    code: int
-
-    def __init__(self, message: str, code: int):
-        super().__init__(message)
-        self.code = code
 
 
 Handler = Callable[[State], None]
@@ -145,7 +167,7 @@ class Client(asyncio.Protocol):
             raise ConnectionError("Connection has not yet been made.")
 
         if command == Command.Subscribe:
-            self._on_state(State.Waiting)
+            self._on_state(State.Subscribing)
         elif command == Command.Unsubscribe:
             self._on_state(State.Unsubscribing)
 
@@ -167,13 +189,13 @@ class Client(asyncio.Protocol):
         # there are an unspecified number of events, we will need to resort to
         # timeouts.
 
-        if (previous == State.Unsubscribing) and (
-            state == State.PausedA or state == State.PausedB
-        ):
+        if previous == State.Unsubscribing:
+            if not (state == State.PausedA or state == State.PausedB):
+                raise SubscriptionError(f"Unexpected state {state} while unsubscribing")
             state = State.Unsubscribed
 
-        # TODO: If we were silencing and it didn't silence, should we throw
-        # an error?
+        if previous == State.Unsubscribed and state != State.Subscribing:
+            raise SubscriptionError(f"Unexpected state {state} while unsubscribed")
 
         self.state = state
 
@@ -251,12 +273,17 @@ class Client(asyncio.Protocol):
         rcv = Receiver(client=self, maxsize=maxsize)
         self._receivers.add(rcv)
 
-        # TODO: What if state is silencing, waiting or ready?
-
         if self.state == State.Unsubscribed:
+            # Automatically subscribe
             fut = self.wait_for(State.Subscribed)
             self.send(Command.Subscribe)
             await fut
+        elif self.state == State.Subscribing:
+            # Wait for in-progress subscription to complete
+            await self.wait_for(State.Subscribed)
+        else:
+            # Must already be subscribed
+            pass
 
         return rcv
 
@@ -268,17 +295,13 @@ class Client(asyncio.Protocol):
     async def unsubscribe(self) -> None:
         """Unsubscribe from state changes."""
 
-        # TODO: Should we throw if state is silenced?
-        if self.state == State.Unsubscribed:
-            self._receivers = set()
+        # If already unsubscribing or unsubscribed, we just need to let
+        # events take their course
+        if self.state in {State.Unsubscribing, State.Unsubscribed}:
             return
 
-        # TODO: Should we throw if we're waiting for silence?
-        if self.state == State.Unsubscribing:
-            return
-
-        # TODO: Should we wait for the "ready" event before silencing?
-        if self.state == State.Waiting:
+        # Wait until subscribed in order to avoid whacky state
+        if self.state == State.Subscribing:
             await self.wait_for(State.Subscribed)
 
         @self.listens_once(State.Unsubscribed)
