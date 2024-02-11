@@ -106,18 +106,18 @@ class Receiver(asyncio.Queue):
     """Receive state change events from the Plus Deck 2C PC Cassette Deck."""
 
     _client: "Client"
-    _subscribed: bool
+    _receiving: bool
 
     def __init__(self, client: "Client", maxsize=0):
         super().__init__(maxsize)
         self._client = client
-        self._subscribed = True
+        self._receiving = True
 
     async def __aiter__(self) -> AsyncGenerator[State, None]:
         """Iterate over state change events."""
 
         while True:
-            if not self._subscribed:
+            if not self._receiving:
                 break
 
             state = await self.get()
@@ -125,11 +125,12 @@ class Receiver(asyncio.Queue):
             yield state
 
             if state == State.Unsubscribed:
-                self._subscribed = False
+                self._receiving = False
 
-    def unsubscribe(self) -> None:
-        """Unsubscribe from state changes."""
-        self._subscribed = False
+    def close(self) -> None:
+        """Close the receiver."""
+
+        self._receiving = False
         try:
             self._client._receivers.remove(self)
         except KeyError:
@@ -216,7 +217,8 @@ class Client(asyncio.Protocol):
                 self._loop.create_task(rcv.put(state))
 
         if state == State.Unsubscribed:
-            self._receivers = set()
+            for rcv in list(self._receivers):
+                rcv.close()
 
     def on(self, state: State, f: StateHandler) -> Handler:
         """Call an event handler on a given state."""
