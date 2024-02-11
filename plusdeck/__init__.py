@@ -3,7 +3,7 @@
 import asyncio
 from collections.abc import AsyncGenerator
 from enum import Enum
-from typing import Callable, Iterable, Optional, Set
+from typing import Callable, List, Optional, Set, Type
 
 from pyee.asyncio import AsyncIOEventEmitter
 from serial import EIGHTBITS, PARITY_NONE, STOPBITS_ONE
@@ -17,38 +17,46 @@ A client library for the Plus Deck 2C PC Cassette Deck.
 class Command(Enum):
     """A command for the Plus Deck 2C PC Cassette Deck."""
 
-    PlaySideA = b"\x01"
-    PlaySideB = b"\x02"
+    PlayA = b"\x01"
+    PlayB = b"\x02"
     FastForward = b"\x03"
     Rewind = b"\x04"
     TogglePause = b"\x05"
     Stop = b"\x06"
     Eject = b"\x08"
-    Listen = b"\x0b"
-    Close = b"\x0c"
+    Broadcast = b"\x0b"
+    Silence = b"\x0c"
 
 
-# TODO: State for not ready
 class State(Enum):
     """The state of the Plus Deck 2C PC Cassette Deck."""
 
     PlayingA = 0x0A
-    PausedOnB = 0x0C
+    PausedB = 0x0C
     PlayingB = 0x14
     Ready = 0x15
-    PausedOnA = 0x16
+    PausedA = 0x16
     FastForwarding = 0x1E
     Rewinding = 0x28
     Stopped = 0x32
     Ejected = 0x3C
-    Closed = 0x00
+    Waiting = -1
+    Silencing = -2
+    Silenced = -3
 
+    @classmethod
+    def from_bytes(cls: Type["State"], buffer: bytes) -> List["State"]:
+        return [cls(code) for code in buffer]
 
-class Side(Enum):
-    """A side of a cassette."""
+    @classmethod
+    def from_byte(cls: Type["State"], buffer: bytes) -> "State":
+        assert len(buffer) == 1, "Can not convert multiple bytes to a single State"
+        return cls.from_bytes(buffer)[0]
 
-    A = "A"
-    B = "B"
+    def to_bytes(self: "State") -> bytes:
+        if self.value < 0:
+            raise ValueError(f"Can not convert {self} to bytes")
+        return self.value.to_bytes()
 
 
 class ConnectionError(Exception):
@@ -86,14 +94,15 @@ class Receiver(asyncio.Queue):
         while True:
             state = await self.get()
 
-            if state != State.Closed:
+            # TODO: Should iterator emit silenced state?
+            if state != State.Silenced:
                 yield state
                 continue
 
             break
 
-    def remove(self) -> None:
-        """Remove a receiver."""
+    def unsubscribe(self) -> None:
+        """Unsubscribe from state changes."""
         try:
             self._client._receivers.remove(self)
         except KeyError:
@@ -107,7 +116,6 @@ class Client(asyncio.Protocol):
     events: AsyncIOEventEmitter
     _loop: asyncio.AbstractEventLoop
     _transport: SerialTransport | None
-    _sent_close: bool
     _connection_made: asyncio.Future[None]
     _receivers: Set[Receiver]
 
@@ -117,10 +125,9 @@ class Client(asyncio.Protocol):
     ):
         _loop = loop if loop else asyncio.get_running_loop()
 
-        self.state = State.Closed
+        self.state = State.Silenced
         self.events = AsyncIOEventEmitter(_loop)
         self._loop = _loop
-        self._sent_close = False
         self._connection_made = self._loop.create_future()
         self._receivers = set()
 
@@ -137,21 +144,16 @@ class Client(asyncio.Protocol):
         if not self._transport:
             raise ConnectionError("Connection has not yet been made.")
 
+        if command == Command.Broadcast:
+            self._on_state(State.Waiting)
+        elif command == Command.Silence:
+            self._on_state(State.Silencing)
+
         self._transport.write(command.value)
 
-        if command == Command.Close:
-            self._sent_close = True
-        else:
-            self._sent_close = False
-
     def data_received(self, data):
-        for code in data:
-            try:
-                state = State(code)
-            except ValueError:
-                raise StateError(f"Unknown state: {code}", code)
-            else:
-                self._on_state(state)
+        for state in State.from_bytes(data):
+            self._on_state(state)
 
     def _on_state(self, state: State):
         previous = self.state
@@ -165,16 +167,18 @@ class Client(asyncio.Protocol):
         # there are an unspecified number of events, we will need to resort to
         # timeouts.
 
-        sent_close = self._sent_close
-        self._sent_close = False
+        if (previous == State.Silencing) and (
+            state == State.PausedA or state == State.PausedB
+        ):
+            state = State.Silenced
 
-        if sent_close and (state == State.PausedOnA or state == State.PausedOnB):
-            state = State.Closed
-
-        # TODO: If we sent a close and it didn't close, should we throw an
-        # error?
+        # TODO: If we were silencing and it didn't silence, should we throw
+        # an error?
 
         self.state = state
+
+        if state == State.Ready:
+            self.events.emit("ready")
 
         # Emit the state every time
         self.events.emit("state", state)
@@ -184,7 +188,7 @@ class Client(asyncio.Protocol):
             for rcv in self._receivers:
                 self._loop.create_task(rcv.put(state))
 
-        if state == State.Closed:
+        if state == State.Silenced:
             self._receivers = set()
 
     def on(self, state: State, f: StateHandler) -> Handler:
@@ -192,7 +196,6 @@ class Client(asyncio.Protocol):
 
         return self.listens_to(state)(f)
 
-    # TODO: listening is currently overloaded hard core.
     def listens_to(self, state: State) -> Callable[[StateHandler], Handler]:
         """Decorate an event handler to be called on a given state."""
 
@@ -228,7 +231,7 @@ class Client(asyncio.Protocol):
         return decorator
 
     def wait_for(
-        self, state: State, timeout: Optional[int] = None
+        self, state: State, timeout: Optional[int | float] = None
     ) -> asyncio.Future[None]:
         """Wait for a given state to emit."""
 
@@ -242,38 +245,47 @@ class Client(asyncio.Protocol):
 
         return asyncio.ensure_future(asyncio.wait_for(fut, timeout=timeout))
 
-    async def listen(self, maxsize: int = 0) -> Receiver:
-        """Listen for state changes."""
+    async def subscribe(self, maxsize: int = 0) -> Receiver:
+        """Subscribe to state changes."""
 
         rcv = Receiver(client=self, maxsize=maxsize)
         self._receivers.add(rcv)
 
-        if self.state == State.Closed:
+        # TODO: What if state is silencing, waiting or ready?
+
+        if self.state == State.Silenced:
             fut = self.wait_for(State.Ready)
-            self.send(Command.Listen)
+            self.send(Command.Broadcast)
             await fut
-            self.events.emit("listen")
 
         return rcv
 
-    def receivers(self) -> Iterable[Receiver]:
+    def receivers(self) -> List[Receiver]:
         """Currently active receivers."""
 
-        return self._receivers
+        return list(self._receivers)
 
-    async def close(self) -> None:
-        """Stop listening for state changes."""
+    async def unsubscribe(self) -> None:
+        """Unsubscribe from state changes."""
 
-        # TODO: Should we throw or simulate an idempotent close?
-        if self.state == State.Closed:
+        # TODO: Should we throw if state is silenced?
+        if self.state == State.Silenced:
             self._receivers = set()
             return
 
-        self.send(Command.Close)
+        # TODO: Should we throw if we're waiting for silence?
+        if self.state == State.Silencing:
+            return
 
-        @self.listens_once(State.Closed)
+        # TODO: Should we wait for the "ready" event before silencing?
+        if self.state == State.Waiting:
+            await self.wait_for(State.Ready)
+
+        @self.listens_once(State.Silenced)
         def listener():
-            self.events.emit("close")
+            self.events.emit("silenced")
+
+        self.send(Command.Silence)
 
 
 async def create_connection(
@@ -292,6 +304,6 @@ async def create_connection(
         stopbits=STOPBITS_ONE,
     )
 
-    await client._online
+    await client._connection_made
 
     return client

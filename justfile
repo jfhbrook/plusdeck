@@ -72,7 +72,7 @@ check:
 
 # Run tests with pytest
 test:
-  . ./venv/bin/activate && pytest ./tests
+  . ./venv/bin/activate && pytest -vvv ./tests
   @just _clean-test
 
 # Run integration tests (for what they are)
