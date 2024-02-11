@@ -44,7 +44,13 @@ async def test_command(client: Client, command: Command, code: bytes):
     [
         (state, state.to_bytes())
         for state in State
-        if state not in {State.Subscribing, State.Unsubscribing, State.Unsubscribed}
+        if state
+        not in {
+            State.Subscribing,
+            State.Subscribed,
+            State.Unsubscribing,
+            State.Unsubscribed,
+        }
     ],
 )
 @pytest.mark.asyncio
@@ -246,7 +252,13 @@ async def test_once(client: Client):
     [
         state
         for state in State
-        if state not in {State.Subscribing, State.Unsubscribing, State.Unsubscribed}
+        if state
+        not in {
+            State.Subscribing,
+            State.Subscribed,
+            State.Unsubscribing,
+            State.Unsubscribed,
+        }
     ],
 )
 @pytest.mark.asyncio

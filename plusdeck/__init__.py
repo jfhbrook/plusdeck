@@ -210,14 +210,12 @@ class Client(asyncio.Protocol):
 
         self.state = state
 
-        if state != previous and state == State.Subscribed:
-            self.events.emit("subscribed")
-
-        # Emit the state every time
-        self.events.emit("state", state)
-
-        # Only receive state changes
         if state != previous:
+            if state == State.Subscribed:
+                self.events.emit("subscribed")
+
+            self.events.emit("state", state)
+
             if state == State.Unsubscribed:
                 self.events.emit("unsubscribed")
 
