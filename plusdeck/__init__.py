@@ -24,8 +24,8 @@ class Command(Enum):
     TogglePause = b"\x05"
     Stop = b"\x06"
     Eject = b"\x08"
-    Broadcast = b"\x0b"
-    Silence = b"\x0c"
+    Subscribe = b"\x0b"
+    Unsubscribe = b"\x0c"
 
 
 class State(Enum):
@@ -34,15 +34,15 @@ class State(Enum):
     PlayingA = 0x0A
     PausedB = 0x0C
     PlayingB = 0x14
-    Ready = 0x15
+    Subscribed = 0x15
     PausedA = 0x16
     FastForwarding = 0x1E
     Rewinding = 0x28
     Stopped = 0x32
     Ejected = 0x3C
     Waiting = -1
-    Silencing = -2
-    Silenced = -3
+    Unsubscribing = -2
+    Unsubscribed = -3
 
     @classmethod
     def from_bytes(cls: Type["State"], buffer: bytes) -> List["State"]:
@@ -95,7 +95,7 @@ class Receiver(asyncio.Queue):
             state = await self.get()
 
             # TODO: Should iterator emit silenced state?
-            if state != State.Silenced:
+            if state != State.Unsubscribed:
                 yield state
                 continue
 
@@ -125,7 +125,7 @@ class Client(asyncio.Protocol):
     ):
         _loop = loop if loop else asyncio.get_running_loop()
 
-        self.state = State.Silenced
+        self.state = State.Unsubscribed
         self.events = AsyncIOEventEmitter(_loop)
         self._loop = _loop
         self._connection_made = self._loop.create_future()
@@ -144,10 +144,10 @@ class Client(asyncio.Protocol):
         if not self._transport:
             raise ConnectionError("Connection has not yet been made.")
 
-        if command == Command.Broadcast:
+        if command == Command.Subscribe:
             self._on_state(State.Waiting)
-        elif command == Command.Silence:
-            self._on_state(State.Silencing)
+        elif command == Command.Unsubscribe:
+            self._on_state(State.Unsubscribing)
 
         self._transport.write(command.value)
 
@@ -167,18 +167,18 @@ class Client(asyncio.Protocol):
         # there are an unspecified number of events, we will need to resort to
         # timeouts.
 
-        if (previous == State.Silencing) and (
+        if (previous == State.Unsubscribing) and (
             state == State.PausedA or state == State.PausedB
         ):
-            state = State.Silenced
+            state = State.Unsubscribed
 
         # TODO: If we were silencing and it didn't silence, should we throw
         # an error?
 
         self.state = state
 
-        if state == State.Ready:
-            self.events.emit("ready")
+        if state == State.Subscribed:
+            self.events.emit("subscribed")
 
         # Emit the state every time
         self.events.emit("state", state)
@@ -188,7 +188,7 @@ class Client(asyncio.Protocol):
             for rcv in self._receivers:
                 self._loop.create_task(rcv.put(state))
 
-        if state == State.Silenced:
+        if state == State.Unsubscribed:
             self._receivers = set()
 
     def on(self, state: State, f: StateHandler) -> Handler:
@@ -253,9 +253,9 @@ class Client(asyncio.Protocol):
 
         # TODO: What if state is silencing, waiting or ready?
 
-        if self.state == State.Silenced:
-            fut = self.wait_for(State.Ready)
-            self.send(Command.Broadcast)
+        if self.state == State.Unsubscribed:
+            fut = self.wait_for(State.Subscribed)
+            self.send(Command.Subscribe)
             await fut
 
         return rcv
@@ -269,23 +269,23 @@ class Client(asyncio.Protocol):
         """Unsubscribe from state changes."""
 
         # TODO: Should we throw if state is silenced?
-        if self.state == State.Silenced:
+        if self.state == State.Unsubscribed:
             self._receivers = set()
             return
 
         # TODO: Should we throw if we're waiting for silence?
-        if self.state == State.Silencing:
+        if self.state == State.Unsubscribing:
             return
 
         # TODO: Should we wait for the "ready" event before silencing?
         if self.state == State.Waiting:
-            await self.wait_for(State.Ready)
+            await self.wait_for(State.Subscribed)
 
-        @self.listens_once(State.Silenced)
+        @self.listens_once(State.Unsubscribed)
         def listener():
-            self.events.emit("silenced")
+            self.events.emit("unsubscribed")
 
-        self.send(Command.Silence)
+        self.send(Command.Unsubscribe)
 
 
 async def create_connection(

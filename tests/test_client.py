@@ -29,7 +29,7 @@ async def test_online(client: Client):
 
 @pytest.mark.parametrize(
     "command,code",
-    [(Command.PlayA, b"\x01"), (Command.Silence, b"\x0c")],
+    [(Command.PlayA, b"\x01"), (Command.Unsubscribe, b"\x0c")],
 )
 @pytest.mark.asyncio
 async def test_command(client: Client, command: Command, code: bytes):
@@ -44,7 +44,7 @@ async def test_command(client: Client, command: Command, code: bytes):
     [
         (state, state.to_bytes())
         for state in State
-        if state not in {State.Waiting, State.Silencing, State.Silenced}
+        if state not in {State.Waiting, State.Unsubscribing, State.Unsubscribed}
     ],
 )
 @pytest.mark.asyncio
@@ -188,7 +188,7 @@ async def test_once(client: Client):
     [
         state
         for state in State
-        if state not in {State.Waiting, State.Silencing, State.Silenced}
+        if state not in {State.Waiting, State.Unsubscribing, State.Unsubscribed}
     ],
 )
 @pytest.mark.asyncio
@@ -203,13 +203,13 @@ async def test_wait_for(client: Client, state: State):
 
 
 @pytest.mark.asyncio
-async def test_listen_when_silenced(client: Client):
-    """Waits for ready event when starting to listen."""
+async def test_subscribe_when_unsubscribed(client: Client):
+    """Waits for subscribed event when subscribing."""
 
-    # Ensure starting state is silenced
-    client.state = State.Silenced
+    # Ensure starting state is unsubscribed
+    client.state = State.Unsubscribed
 
-    # When transport write is called, simulate receiving State.Ready
+    # When transport write is called, simulate receiving State.Subscribed
     def emit_ready(_):
         client.data_received(b"\x15")
 
@@ -221,16 +221,16 @@ async def test_listen_when_silenced(client: Client):
 
     assert rcv in set(client.receivers())
 
-    # Sent the "listen" command
+    # Sent the "subscribe" command
     cast(Mock, client._transport.write).assert_called_with(b"\x0b")
 
     # Set the current state
-    assert client.state == State.Ready
+    assert client.state == State.Subscribed
 
 
 @pytest.mark.asyncio
-async def test_listen_when_listening(client):
-    """Creates receiver when already listening."""
+async def test_subscribe_when_subscribed(client):
+    """Creates receiver when already subscribed."""
 
     client.state = State.Ejected
 
@@ -246,7 +246,8 @@ async def test_listen_when_listening(client):
     [
         (state.to_bytes(), state)
         for state in State
-        if state not in {State.Ejected, State.Waiting, State.Silencing, State.Silenced}
+        if state
+        not in {State.Ejected, State.Waiting, State.Unsubscribing, State.Unsubscribed}
     ],
 )
 @pytest.mark.asyncio
@@ -296,7 +297,7 @@ async def test_receive_duplicate_state(client: Client):
 async def test_many_receivers(client: Client):
     """Juggles many receivers."""
 
-    client.state = State.Silenced
+    client.state = State.Unsubscribed
 
     def emit_ready(_):
         client.data_received(b"\x15")
@@ -304,9 +305,9 @@ async def test_many_receivers(client: Client):
     assert client._transport is not None
     cast(Mock, client._transport.write).side_effect = emit_ready
 
-    ready = client.wait_for(State.Ready, timeout=TEST_TIMEOUT)
+    ready = client.wait_for(State.Subscribed, timeout=TEST_TIMEOUT)
 
-    # Create first receiver before listening
+    # Create first receiver before subscribing
     rcv1 = await asyncio.wait_for(client.subscribe(), timeout=TEST_TIMEOUT)
 
     assert rcv1 in set(client.receivers())
@@ -316,7 +317,7 @@ async def test_many_receivers(client: Client):
 
     cast(Mock, client._transport.write).assert_called_once_with(b"\x0b")
 
-    # Create second receiver after listening
+    # Create second receiver after subscribing
     rcv2 = await asyncio.wait_for(client.subscribe(), timeout=TEST_TIMEOUT)
 
     assert rcv1 in set(client.receivers())
@@ -331,7 +332,11 @@ async def test_many_receivers(client: Client):
     state1b = await asyncio.wait_for(rcv1.get(), timeout=TEST_TIMEOUT)
     state1c = await asyncio.wait_for(rcv1.get(), timeout=TEST_TIMEOUT)
 
-    assert [state1a, state1b, state1c] == [State.Waiting, State.Ready, State.Ejected]
+    assert [state1a, state1b, state1c] == [
+        State.Waiting,
+        State.Subscribed,
+        State.Ejected,
+    ]
 
     # Should have one state from second receiver
     state2 = await asyncio.wait_for(rcv2.get(), timeout=TEST_TIMEOUT)
@@ -356,8 +361,8 @@ async def test_unsubscribe_receiver(client: Client):
     "buffer", [state.to_bytes() for state in {State.PausedA, State.PausedB}]
 )
 @pytest.mark.asyncio
-async def test_silence(client: Client, buffer):
-    """Closes a listening client."""
+async def test_unsubscribe(client: Client, buffer):
+    """Unsubscribe a subscribed client."""
 
     client.state = State.Ejected
 
@@ -365,26 +370,26 @@ async def test_silence(client: Client, buffer):
 
     assert rcv in set(client.receivers())
 
-    fut_wait_for = client.wait_for(State.Silenced, timeout=TEST_TIMEOUT)
+    fut_wait_for = client.wait_for(State.Unsubscribed, timeout=TEST_TIMEOUT)
     fut_get1 = asyncio.wait_for(rcv.get(), timeout=TEST_TIMEOUT)
     fut_get2 = asyncio.wait_for(rcv.get(), timeout=TEST_TIMEOUT)
 
-    client.send(Command.Silence)
+    client.send(Command.Unsubscribe)
     client.data_received(buffer)
 
     assert len(client.receivers()) == 0
 
     await fut_wait_for
-    assert (await fut_get1) == State.Silencing
-    assert (await fut_get2) == State.Silenced
+    assert (await fut_get1) == State.Unsubscribing
+    assert (await fut_get2) == State.Unsubscribed
 
     with pytest.raises(asyncio.TimeoutError):
         await asyncio.wait_for(rcv.get(), timeout=TEST_TIMEOUT)
 
 
 @pytest.mark.skip
-def test_attempted_silence(client: Client):
-    """Throws an error if client fails to silence."""
+def test_failed_unsubscribe(client: Client):
+    """Throws an error if client fails to unsubscribe."""
 
 
 @pytest.mark.parametrize(
@@ -392,8 +397,8 @@ def test_attempted_silence(client: Client):
 )
 @pytest.mark.asyncio
 @pytest.mark.skip
-async def test_silence_when_silenced(client: Client, buffer: bytes):
-    """Silences when already silenced."""
+async def test_unsubscribe_when_unsubscribed(client: Client, buffer: bytes):
+    """Unsubscribes when already unsubscribed."""
 
     pass
 
@@ -416,10 +421,10 @@ async def test_iter_receiver(client: Client, buffer: bytes):
     client.data_received(b"\x0a")
 
     # Close the connection
-    client.send(Command.Silence)
+    client.send(Command.Unsubscribe)
     client.data_received(buffer)
 
-    states = [None, State.Silencing, State.PlayingA, State.Stopped]
+    states = [None, State.Unsubscribing, State.PlayingA, State.Stopped]
 
     async def iterate():
         async for state in rcv:
