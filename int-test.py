@@ -1,20 +1,17 @@
 import asyncio
 
-from plusdeck import Command, State, Side, PlusDeckProtocol, create_connection
+from plusdeck import Command, State, create_connection
 
 PORT = '/dev/ttyUSB0'
 
-class TestProtocol(PlusDeckProtocol):
-    def on_state(self, state):
-        print(state)
-
-
 async def main():
-    transport, protocol = await create_connection(PORT, TestProtocol)
+    client = await create_connection(PORT)
 
-    transport.write(b"\x0b\n")
+    client.events.on('state', lambda st: print(st))
 
-    print("wrote to transport")
+    await asyncio.sleep(10)
+
+    client.send(Command.PlaySideA)
 
     await asyncio.sleep(10)
 
