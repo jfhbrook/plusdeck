@@ -8,6 +8,8 @@ anyio==4.2.0
     # via
     #   httpx
     #   jupyter-server
+appdirs==1.4.4
+    # via plusdeck (pyproject.toml)
 argon2-cffi==23.1.0
     # via jupyter-server
 argon2-cffi-bindings==21.2.0
@@ -57,7 +59,9 @@ colorama==0.4.6
     #   griffe
     #   tox
 comm==0.2.1
-    # via ipykernel
+    # via
+    #   ipykernel
+    #   ipywidgets
 cryptography==42.0.2
     # via secretstorage
 debugpy==1.8.1
@@ -113,7 +117,11 @@ iniconfig==2.0.0
 ipykernel==6.29.2
     # via jupyterlab
 ipython==8.21.0
-    # via ipykernel
+    # via
+    #   ipykernel
+    #   ipywidgets
+ipywidgets==8.1.2
+    # via plusdeck (pyproject.toml)
 isoduration==20.11.0
     # via jsonschema
 isort==5.13.2
@@ -177,6 +185,8 @@ jupyterlab-pygments==0.3.0
     # via nbconvert
 jupyterlab-server==2.25.2
     # via jupyterlab
+jupyterlab-widgets==3.0.10
+    # via ipywidgets
 keyring==24.3.0
     # via twine
 markdown==3.5.2
@@ -309,7 +319,9 @@ pymdown-extensions==10.7
 pyproject-api==1.6.1
     # via tox
 pyserial==3.5
-    # via pyserial-asyncio
+    # via
+    #   plusdeck (pyproject.toml)
+    #   pyserial-asyncio
 pyserial-asyncio==0.6
     # via plusdeck (pyproject.toml)
 pytest==8.0.0
@@ -329,6 +341,7 @@ pyyaml==6.0.1
     # via
     #   jupyter-events
     #   mkdocs
+    #   plusdeck (pyproject.toml)
     #   pymdown-extensions
     #   pyyaml-env-tag
 pyyaml-env-tag==0.1
@@ -408,6 +421,7 @@ traitlets==5.14.1
     #   comm
     #   ipykernel
     #   ipython
+    #   ipywidgets
     #   jupyter-client
     #   jupyter-core
     #   jupyter-events
@@ -447,5 +461,7 @@ webencodings==0.5.1
     #   tinycss2
 websocket-client==1.7.0
     # via jupyter-server
+widgetsnbextension==4.0.10
+    # via ipywidgets
 zipp==3.17.0
     # via importlib-metadata

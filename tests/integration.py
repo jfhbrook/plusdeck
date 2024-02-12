@@ -1,9 +1,8 @@
-import os
-
 from plusdeck.client import Command, create_connection, State
+from plusdeck.config import Config
 from plusdeck.test import check, confirm, run_tests, skip, take_action
 
-PLUSDECK_URL = os.environ.get("PLUSDECK_URL", "/dev/ttyUSB0")
+CONFIG = Config.from_environment()
 
 
 @skip
@@ -12,7 +11,7 @@ async def test_manual_no_events():
 
     confirm("There is NO tape in the deck")
 
-    client = await create_connection(PLUSDECK_URL)
+    client = await create_connection(CONFIG.port)
 
     @client.events.on("state")
     def unexpected_state(state: State):
@@ -39,7 +38,7 @@ async def test_commands_and_events():
 
     confirm("There is NO tape in the deck")
 
-    client = await create_connection(PLUSDECK_URL)
+    client = await create_connection(CONFIG.port)
 
     @client.events.on("state")
     def log_state(state: State) -> None:

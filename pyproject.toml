@@ -13,8 +13,12 @@ readme = "README.md"
 keywords = []
 license = { text = "MIT" }
 dependencies = [
+  "appdirs",
+  "ipywidgets",
   "pyee",
+  "pyserial",
   "pyserial-asyncio",
+  "pyyaml",
 ]
 
 
