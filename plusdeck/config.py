@@ -13,6 +13,12 @@ try:
 except ImportError:
     from yaml import Dumper, Loader
 
+"""
+Configuration management for the Plus Deck 2C PC Cassette Deck. The client
+doesn't use this directly, but it's useful when writing applications and
+configuring the ipywidgets player.
+"""
+
 APP_NAME = "plusdeck"
 
 

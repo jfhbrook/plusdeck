@@ -7,6 +7,11 @@ from serial.tools.list_ports import comports
 from plusdeck.client import Client, Command, State
 from plusdeck.config import Config
 
+"""
+ipywidgets widgets and other tools for interacting with the Plus Deck 2C PC
+Cassette Deck through Jupyter.
+"""
+
 
 class ConfigEditor(widgets.VBox):
     """A widget for editing a Plus Deck 2C PC Cassette Deck config."""
