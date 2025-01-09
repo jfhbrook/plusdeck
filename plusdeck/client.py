@@ -160,11 +160,11 @@ class Client(asyncio.Protocol):
     ):
         _loop = loop if loop else asyncio.get_running_loop()
 
-        self.state = State.Unsubscribed
-        self.events = AsyncIOEventEmitter(_loop)
-        self._loop = _loop
-        self._connection_made = self._loop.create_future()
-        self._receivers = set()
+        self.state: State = State.Unsubscribed
+        self.events: AsyncIOEventEmitter = AsyncIOEventEmitter(_loop)
+        self._loop: asyncio.AbstractEventLoop = _loop
+        self._connection_made: asyncio.Future[None] = self._loop.create_future()
+        self._receivers: Set[Receiver] = set()
 
     def connection_made(self, transport: asyncio.BaseTransport):
         if not isinstance(transport, SerialTransport):
@@ -172,6 +172,8 @@ class Client(asyncio.Protocol):
 
         self._transport = transport
         self._connection_made.set_result(None)
+
+
 
     def close(self) -> None:
         if not self._transport:
