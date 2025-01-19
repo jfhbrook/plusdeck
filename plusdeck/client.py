@@ -44,8 +44,8 @@ class Command(Enum):
 
     PLAY_A = b"\x01"
     PLAY_B = b"\x02"
-    FAST_A = b"\x03"
-    FAST_B = b"\x04"
+    FAST_FORWARD_A = b"\x03"
+    FAST_FORWARD_B = b"\x04"
     PAUSE = b"\x05"
     STOP = b"\x06"
     EJECT = b"\x08"
@@ -74,8 +74,8 @@ class State(Enum):
     PLAYING_B = 20
     SUBSCRIBED = 21
     PAUSED_B = 22
-    MOVING_FAST_A = 30
-    MOVING_FAST_B = 40
+    FAST_FORWARDING_A = 30
+    FAST_FORWARDING_B = 40
     STOPPED = 50
     EJECTED = 60
     SUBSCRIBING = -1

@@ -49,9 +49,9 @@ async def test_commands_and_events():
 
         await rcv.expect(State.STOPPED)
 
-        client.send(Command.FAST_B)
+        client.send(Command.FAST_FORWARD_B)
 
-        await rcv.expect(State.MOVING_FAST_B)
+        await rcv.expect(State.FAST_FORWARDING_B)
         await rcv.expect(State.STOPPED)
 
         client.send(Command.PLAY_A)
@@ -72,9 +72,9 @@ async def test_commands_and_events():
 
         check("Did the deck start playing side A again?", "Deck is playing side A")
 
-        client.send(Command.FAST_A)
+        client.send(Command.FAST_FORWARD_A)
 
-        await rcv.expect(State.MOVING_FAST_A)
+        await rcv.expect(State.FAST_FORWARDING_A)
         await rcv.expect(State.STOPPED)
 
         client.send(Command.PLAY_B)

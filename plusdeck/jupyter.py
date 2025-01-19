@@ -43,8 +43,8 @@ STATES = {
     State.PAUSED_A: "Pause Side A",
     State.PLAYING_B: "Play Side B",
     State.PAUSED_B: "Pause Side B",
-    State.MOVING_FAST_A: "Fast-Forward",
-    State.MOVING_FAST_B: "Rewind",
+    State.FAST_FORWARDING_A: "Fast-Forward A (Rewind B)",
+    State.FAST_FORWARDING_B: "Fast-Forward B (Rewind A)",
     State.STOPPED: "Stop",
     State.EJECTED: "Eject",
     State.SUBSCRIBING: "Hello",
@@ -114,13 +114,13 @@ async def player(client: Client) -> widgets.HBox:
 
     @fast_forward.on_click
     def on_fast_forward(button):
-        client.send(Command.FAST_B)
+        client.send(Command.FAST_FORWARD_B)
 
     rewind = widgets.Button(value=False, description="⏪", tooltip="Rewind")
 
     @rewind.on_click
     def on_rewind(button):
-        client.send(Command.FAST_A)
+        client.send(Command.FAST_FORWARD_A)
 
     power = widgets.Button(value=False, description="⏻", tooltip="Turn On/Off")
 
