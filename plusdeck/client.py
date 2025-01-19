@@ -42,15 +42,15 @@ class SubscriptionError(StateError):
 class Command(Enum):
     """A command for the Plus Deck 2C PC Cassette Deck."""
 
-    PlayA = b"\x01"
-    PlayB = b"\x02"
-    FastForward = b"\x03"
-    Rewind = b"\x04"
-    Pause = b"\x05"
-    Stop = b"\x06"
-    Eject = b"\x08"
-    Subscribe = b"\x0b"
-    Unsubscribe = b"\x0c"
+    PLAY_A = b"\x01"
+    PLAY_B = b"\x02"
+    FAST_FORWARD_A = b"\x03"
+    FAST_FORWARD_B = b"\x04"
+    PAUSE = b"\x05"
+    STOP = b"\x06"
+    EJECT = b"\x08"
+    SUBSCRIBE = b"\x0b"
+    UNSUBSCRIBE = b"\x0c"
 
     @classmethod
     def from_bytes(cls: Type["Command"], buffer: bytes) -> List["Command"]:
@@ -69,18 +69,18 @@ class Command(Enum):
 class State(Enum):
     """The state of the Plus Deck 2C PC Cassette Deck."""
 
-    PlayingA = 0x0A
-    PausedA = 0x0C
-    PlayingB = 0x14
-    Subscribed = 0x15
-    PausedB = 0x16
-    FastForwarding = 0x1E
-    Rewinding = 0x28
-    Stopped = 0x32
-    Ejected = 0x3C
-    Subscribing = -1
-    Unsubscribing = -2
-    Unsubscribed = -3
+    PLAYING_A = 10
+    PAUSED_A = 12
+    PLAYING_B = 20
+    SUBSCRIBED = 21
+    PAUSED_B = 22
+    FAST_FORWARDING_A = 30
+    FAST_FORWARDING_B = 40
+    STOPPED = 50
+    EJECTED = 60
+    SUBSCRIBING = -1
+    UNSUBSCRIBING = -2
+    UNSUBSCRIBED = -3
 
     @classmethod
     def from_bytes(cls: Type["State"], buffer: bytes) -> List["State"]:
@@ -131,7 +131,7 @@ class Receiver(asyncio.Queue):
 
             yield state
 
-            if state == State.Unsubscribed:
+            if state == State.UNSUBSCRIBED:
                 self._receiving = False
 
     def close(self) -> None:
@@ -160,7 +160,7 @@ class Client(asyncio.Protocol):
     ):
         _loop = loop if loop else asyncio.get_running_loop()
 
-        self.state: State = State.Unsubscribed
+        self.state: State = State.UNSUBSCRIBED
         self.events: AsyncIOEventEmitter = AsyncIOEventEmitter(_loop)
         self._loop: asyncio.AbstractEventLoop = _loop
         self._connection_made: asyncio.Future[None] = self._loop.create_future()
@@ -173,8 +173,6 @@ class Client(asyncio.Protocol):
         self._transport = transport
         self._connection_made.set_result(None)
 
-
-
     def close(self) -> None:
         if not self._transport:
             raise ConnectionError("Can not close uninitialized connection")
@@ -186,10 +184,10 @@ class Client(asyncio.Protocol):
         if not self._transport:
             raise ConnectionError("Connection has not yet been made.")
 
-        if command == Command.Subscribe:
-            self._on_state(State.Subscribing)
-        elif command == Command.Unsubscribe:
-            self._on_state(State.Unsubscribing)
+        if command == Command.SUBSCRIBE:
+            self._on_state(State.SUBSCRIBING)
+        elif command == Command.UNSUBSCRIBE:
+            self._on_state(State.UNSUBSCRIBING)
 
         self._transport.write(command.value)
 
@@ -209,29 +207,29 @@ class Client(asyncio.Protocol):
         # there are an unspecified number of events, we will need to resort to
         # timeouts.
 
-        if previous == State.Unsubscribing:
-            if not (state == State.PausedA or state == State.PausedB):
+        if previous == State.UNSUBSCRIBING:
+            if not (state == State.PAUSED_A or state == State.PAUSED_B):
                 raise SubscriptionError(f"Unexpected state {state} while unsubscribing")
-            state = State.Unsubscribed
+            state = State.UNSUBSCRIBED
 
-        if previous == State.Unsubscribed and state != State.Subscribing:
+        if previous == State.UNSUBSCRIBED and state != State.SUBSCRIBING:
             raise SubscriptionError(f"Unexpected state {state} while unsubscribed")
 
         self.state = state
 
         if state != previous:
-            if state == State.Subscribed:
+            if state == State.SUBSCRIBED:
                 self.events.emit("subscribed")
 
             self.events.emit("state", state)
 
-            if state == State.Unsubscribed:
+            if state == State.UNSUBSCRIBED:
                 self.events.emit("unsubscribed")
 
             for rcv in list(self._receivers):
                 self._loop.create_task(rcv.put(state))
 
-        if state == State.Unsubscribed:
+        if state == State.UNSUBSCRIBED:
             for rcv in list(self._receivers):
                 rcv.close()
 
@@ -295,14 +293,14 @@ class Client(asyncio.Protocol):
         rcv = Receiver(client=self, maxsize=maxsize)
         self._receivers.add(rcv)
 
-        if self.state == State.Unsubscribed:
+        if self.state == State.UNSUBSCRIBED:
             # Automatically subscribe
-            fut = self.wait_for(State.Subscribed)
-            self.send(Command.Subscribe)
+            fut = self.wait_for(State.SUBSCRIBED)
+            self.send(Command.SUBSCRIBE)
             await fut
-        elif self.state == State.Subscribing:
+        elif self.state == State.SUBSCRIBING:
             # Wait for in-progress subscription to complete
-            await self.wait_for(State.Subscribed)
+            await self.wait_for(State.SUBSCRIBED)
         else:
             # Must already be subscribed
             pass
@@ -319,14 +317,14 @@ class Client(asyncio.Protocol):
 
         # If already unsubscribing or unsubscribed, we just need to let
         # events take their course
-        if self.state in {State.Unsubscribing, State.Unsubscribed}:
+        if self.state in {State.UNSUBSCRIBING, State.UNSUBSCRIBED}:
             return
 
         # Wait until subscribed in order to avoid whacky state
-        if self.state == State.Subscribing:
-            await self.wait_for(State.Subscribed)
+        if self.state == State.SUBSCRIBING:
+            await self.wait_for(State.SUBSCRIBED)
 
-        self.send(Command.Unsubscribe)
+        self.send(Command.UNSUBSCRIBE)
 
     @asynccontextmanager
     async def session(self):

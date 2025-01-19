@@ -39,18 +39,18 @@ class ConfigEditor(widgets.VBox):
 
 
 STATES = {
-    State.PlayingA: "Play Side A",
-    State.PausedA: "Pause Side A",
-    State.PlayingB: "Play Side B",
-    State.PausedB: "Pause Side B",
-    State.FastForwarding: "Fast-Forward",
-    State.Rewinding: "Rewind",
-    State.Stopped: "Stop",
-    State.Ejected: "Eject",
-    State.Subscribing: "Hello",
-    State.Subscribed: "Hello",
-    State.Unsubscribing: "Goodbye",
-    State.Unsubscribed: "Off",
+    State.PLAYING_A: "Play Side A",
+    State.PAUSED_A: "Pause Side A",
+    State.PLAYING_B: "Play Side B",
+    State.PAUSED_B: "Pause Side B",
+    State.FAST_FORWARDING_A: "Fast-Forward A (Rewind B)",
+    State.FAST_FORWARDING_B: "Fast-Forward B (Rewind A)",
+    State.STOPPED: "Stop",
+    State.EJECTED: "Eject",
+    State.SUBSCRIBING: "Hello",
+    State.SUBSCRIBED: "Hello",
+    State.UNSUBSCRIBING: "Goodbye",
+    State.UNSUBSCRIBED: "Off",
 }
 
 
@@ -77,7 +77,7 @@ async def player(client: Client) -> widgets.HBox:
 
     @pause.on_click
     def on_pause(button):
-        client.send(Command.Pause)
+        client.send(Command.PAUSE)
 
     play_a = widgets.Button(
         value=False, description="▶️", tooltip="Play Side A", layout={"width": "45%"}
@@ -85,14 +85,14 @@ async def player(client: Client) -> widgets.HBox:
 
     @play_a.on_click
     def on_play_a(button):
-        client.send(Command.PlayA)
+        client.send(Command.PLAY_A)
 
     play_b = widgets.Button(
         value=False, description="◀️", tooltip="Play Side B", layout={"width": "45%"}
     )
 
     def on_play_b(button):
-        client.send(Command.PlayB)
+        client.send(Command.PLAY_B)
 
     play_b.on_click(on_play_b)
 
@@ -102,31 +102,31 @@ async def player(client: Client) -> widgets.HBox:
 
     @stop.on_click
     def on_stop(button):
-        client.send(Command.Stop)
+        client.send(Command.STOP)
 
     eject = widgets.Button(value=False, description="⏏️", tooltip="Eject")
 
     @eject.on_click
     def on_eject(button):
-        client.send(Command.Eject)
+        client.send(Command.EJECT)
 
     fast_forward = widgets.Button(value=False, description="⏩", tooltip="Fast-Forward")
 
     @fast_forward.on_click
     def on_fast_forward(button):
-        client.send(Command.FastForward)
+        client.send(Command.FAST_FORWARD_B)
 
     rewind = widgets.Button(value=False, description="⏪", tooltip="Rewind")
 
     @rewind.on_click
     def on_rewind(button):
-        client.send(Command.Rewind)
+        client.send(Command.FAST_FORWARD_A)
 
     power = widgets.Button(value=False, description="⏻", tooltip="Turn On/Off")
 
     @power.on_click
     def on_power(button):
-        client.send(Command.Unsubscribe)
+        client.send(Command.UNSUBSCRIBE)
 
     return widgets.HBox(
         [
