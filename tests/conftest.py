@@ -14,7 +14,7 @@ import plusdeck.config
 async def client():
     client = Client()
     client._transport = Mock(name="client._transport")
-    client.state = State.Subscribed
+    client.state = State.SUBSCRIBED
     return client
 
 

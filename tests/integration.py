@@ -47,60 +47,60 @@ async def test_commands_and_events():
     async with client.session() as rcv:
         take_action("Put a tape in the deck")
 
-        await rcv.expect(State.Stopped)
+        await rcv.expect(State.STOPPED)
 
-        client.send(Command.Rewind)
+        client.send(Command.FAST_B)
 
-        await rcv.expect(State.Rewinding)
-        await rcv.expect(State.Stopped)
+        await rcv.expect(State.MOVING_FAST_B)
+        await rcv.expect(State.STOPPED)
 
-        client.send(Command.PlayA)
+        client.send(Command.PLAY_A)
 
-        await rcv.expect(State.PlayingA)
+        await rcv.expect(State.PLAYING_A)
 
         check("Did the deck rewind and start playing side A?", "Deck is playing side A")
 
-        client.send(Command.Pause)
+        client.send(Command.PAUSE)
 
-        await rcv.expect(State.PausedA)
+        await rcv.expect(State.PAUSED_A)
 
         check("Did the deck pause?", "Deck is paused on side A")
 
-        client.send(Command.Pause)
+        client.send(Command.PAUSE)
 
-        await rcv.expect(State.PlayingA)
+        await rcv.expect(State.PLAYING_A)
 
         check("Did the deck start playing side A again?", "Deck is playing side A")
 
-        client.send(Command.FastForward)
+        client.send(Command.FAST_A)
 
-        await rcv.expect(State.FastForwarding)
-        await rcv.expect(State.Stopped)
+        await rcv.expect(State.MOVING_FAST_A)
+        await rcv.expect(State.STOPPED)
 
-        client.send(Command.PlayB)
+        client.send(Command.PLAY_B)
 
-        await rcv.expect(State.PlayingB)
+        await rcv.expect(State.PLAYING_B)
 
         check(
             "Did the deck fast-forward and start playing side B?",
             "Deck is playing side B",
         )
 
-        client.send(Command.Pause)
+        client.send(Command.PAUSE)
 
-        await rcv.expect(State.PausedB)
+        await rcv.expect(State.PAUSED_B)
 
         check("Did the deck pause?", "Deck is paused on side A")
 
-        client.send(Command.Pause)
+        client.send(Command.PAUSE)
 
-        await rcv.expect(State.PlayingB)
+        await rcv.expect(State.PLAYING_B)
 
         check("Did the deck start playing side B again?", "Deck is playing side B")
 
-        client.send(Command.Eject)
+        client.send(Command.EJECT)
 
-        await rcv.expect(State.Ejected)
+        await rcv.expect(State.EJECTED)
 
         check("Did the deck eject the tape?", "Deck has ejected")
 
