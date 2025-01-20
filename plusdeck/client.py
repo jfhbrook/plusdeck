@@ -102,7 +102,7 @@ Handler = Callable[[State], None]
 StateHandler = Callable[[], None]
 
 
-class Receiver(asyncio.Queue):
+class Receiver(asyncio.Queue[State]):
     """Receive state change events from the Plus Deck 2C PC Cassette Deck."""
 
     _client: "Client"
