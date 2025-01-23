@@ -1,4 +1,4 @@
-from configurence import config, field
+from configurence import BaseConfig, config, field
 from serial.tools.list_ports import comports
 
 """
@@ -16,10 +16,8 @@ def default_port() -> str:
     return comports(include_links=True)[0].device
 
 
-@config
-class Config:
+@config(APP_NAME)
+class Config(BaseConfig):
     """A config for the Plus Deck 2C PC Cassette Deck."""
 
-    port: str = field(
-        default_factory=default_port, env_var="PLUSDECK_PORT"
-    )
+    port: str = field(default_factory=default_port, env_var="PLUSDECK_PORT")
