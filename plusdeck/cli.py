@@ -130,6 +130,9 @@ def pass_client(run_forever: bool = False) -> AsyncCommandDecorator:
             output = obj.output
             timeout = obj.timeout
 
+            if run_forever:
+                timeout = None
+
             # Set the output mode for echo
             echo.mode = output
 
