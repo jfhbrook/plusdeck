@@ -229,7 +229,69 @@ class Client(asyncio.Protocol):
 
         self._transport.write(command.value)
 
-    def data_received(self, data):
+    def play_a(self: Self) -> None:
+        """
+        Play side A.
+        """
+
+        self.send(Command.PLAY_A)
+
+    def play_b(self: Self) -> None:
+        """
+        Play side B.
+        """
+
+        self.send(Command.PLAY_B)
+
+    def fast_forward_a(self: Self) -> None:
+        """
+        Fast-forward side A.
+        """
+
+        self.send(Command.FAST_FORWARD_A)
+
+    def fast_forward_b(self: Self) -> None:
+        """
+        Fast-forward side B.
+        """
+
+        self.send(Command.FAST_FORWARD_B)
+
+    def rewind_a(self: Self) -> None:
+        """
+        Rewind side A. Equivalent to fast-forwarding side B.
+        """
+
+        self.fast_forward_b()
+
+    def rewind_b(self: Self) -> None:
+        """
+        Rewind side B. Equivalent to fast-forwarding side A.
+        """
+
+        self.fast_forward_a()
+
+    def pause(self: Self) -> None:
+        """
+        Pause if playing, or start playing if paused.
+        """
+
+        self.send(Command.PAUSE)
+
+    def stop(self: Self) -> None:
+        """
+        Stop the tape.
+        """
+
+        self.send(Command.STOP)
+
+    def eject(self: Self) -> None:
+        """
+        Eject the tape.
+        """
+        self.send(Command.EJECT)
+
+    def data_received(self: Self, data) -> None:
         try:
             for state in State.from_bytes(data):
                 self._on_state(state)
