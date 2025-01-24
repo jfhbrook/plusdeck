@@ -234,8 +234,7 @@ class Client(asyncio.Protocol):
         """
 
         if not self._transport:
-            self._error(ConnectionError("Connection has not yet been made."))
-            return
+            raise ConnectionError("Connection has not yet been made.")
 
         if command == Command.SUBSCRIBE:
             self._on_state(State.SUBSCRIBING)
@@ -327,17 +326,11 @@ class Client(asyncio.Protocol):
 
         if previous == State.UNSUBSCRIBING:
             if not (state == State.PAUSED_A or state == State.PAUSED_B):
-                self._error(
-                    SubscriptionError(f"Unexpected state {state} while unsubscribing")
-                )
-                return
+                raise SubscriptionError(f"Unexpected state {state} while unsubscribing")
             state = State.UNSUBSCRIBED
 
         if previous == State.UNSUBSCRIBED and state != State.SUBSCRIBING:
-            self._error(
-                SubscriptionError(f"Unexpected state {state} while unsubscribed")
-            )
-            return
+            raise SubscriptionError(f"Unexpected state {state} while unsubscribed")
 
         self.state = state
 
