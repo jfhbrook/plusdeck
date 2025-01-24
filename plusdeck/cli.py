@@ -427,9 +427,9 @@ async def expect(client: Client, state: State) -> None:
 
 @main.command
 @pass_client(run_forever=True)
-async def listen(client: Client) -> None:
+async def subscribe(client: Client) -> None:
     """
-    Listen for state change events
+    Subscribe to state changes
     """
 
     async with client.session() as rcv:
