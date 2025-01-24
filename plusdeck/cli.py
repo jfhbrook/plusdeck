@@ -214,3 +214,13 @@ def main(
     )
 
     logging.basicConfig(level=getattr(logging, log_level))
+
+
+# TODO: play a, b
+# TODO: fast-forward a, b
+# TODO: rewind a, b
+# TODO: pause
+# TODO: stop
+# TODO: eject
+# TODO: expect/wait-for state
+# TODO: subscribe/listen
