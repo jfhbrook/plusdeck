@@ -103,6 +103,9 @@ class Echo:
                 logger.debug(exc)
                 click.echo(json.dumps(repr(obj)), *args, **kwargs)
         else:
+            if isinstance(obj, State):
+                obj = obj.name
+
             click.echo(
                 obj if isinstance(obj, str) else repr(obj),
                 *args,
@@ -179,14 +182,14 @@ def pass_client(run_forever: bool = False) -> AsyncCommandDecorator:
 @click.option("--config-file", "-C", type=click.Path(), help="A path to a config file")
 @click.option(
     "--log-level",
-    envvar="CRYSTALFONTZ_LOG_LEVEL",
+    envvar="PLUSDECK_LOG_LEVEL",
     type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]),
     default="INFO",
     help="Set the log level",
 )
 @click.option(
     "--port",
-    envvar="CRYSTALFONTZ_PORT",
+    envvar="PLUSDECK_PORT",
     help="The serial port the device is connected to",
 )
 @click.option(
@@ -198,7 +201,7 @@ def pass_client(run_forever: bool = False) -> AsyncCommandDecorator:
 @click.option(
     "--timeout",
     type=float,
-    envvar="CRYSTALFONTZ_TIMEOUT",
+    envvar="PLUSDECK_TIMEOUT",
     help="How long to wait for a response from the device before timing out",
 )
 @click.pass_context
@@ -212,7 +215,7 @@ def main(
     timeout: Optional[float],
 ) -> None:
     """
-    Control your Crystalfontz device.
+    Control your Plus Deck 2C tape deck.
     """
 
     file = None
@@ -234,6 +237,69 @@ def main(
     )
 
     logging.basicConfig(level=getattr(logging, log_level))
+
+
+@main.group()
+def config() -> None:
+    """
+    Configure plusdeck.
+    """
+    pass
+
+
+@config.command()
+@click.argument("name")
+@click.pass_obj
+def get(obj: Obj, name: str) -> None:
+    """
+    Get a parameter from the configuration file.
+    """
+
+    try:
+        echo(obj.config.get(name))
+    except ValueError as exc:
+        echo(str(exc))
+        sys.exit(1)
+
+
+@config.command()
+@click.pass_obj
+def show(obj: Obj) -> None:
+    """
+    Show the current configuration.
+    """
+    echo(obj.config)
+
+
+@config.command()
+@click.argument("name")
+@click.argument("value")
+@click.pass_obj
+def set(obj: Obj, name: str, value: str) -> None:
+    """
+    Set a parameter in the configuration file.
+    """
+    try:
+        obj.config.set(name, value)
+    except ValueError as exc:
+        echo(str(exc))
+        sys.exit(1)
+    obj.config.to_file()
+
+
+@config.command()
+@click.argument("name")
+@click.pass_obj
+def unset(obj: Obj, name: str) -> None:
+    """
+    Unset a parameter in the configuration file.
+    """
+    try:
+        obj.config.unset(name)
+    except ValueError as exc:
+        echo(str(exc))
+        sys.exit(1)
+    obj.config.to_file()
 
 
 @main.group
