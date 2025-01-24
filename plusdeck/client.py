@@ -191,6 +191,9 @@ class Client(asyncio.Protocol):
         return self._closed
 
     def close(self: Self) -> None:
+        """
+        Close the connection.
+        """
         self._close()
 
     # Internal method to close the connection, potentially due to an exception.
@@ -210,8 +213,10 @@ class Client(asyncio.Protocol):
         # TODO: Send exception to any open receivers
         self._close(exc)
 
-    def send(self, command: Command):
-        """Send a command to the Plus Deck 2C."""
+    def send(self, command: Command) -> None:
+        """
+        Send a command to the Plus Deck 2C.
+        """
 
         if not self._transport:
             self._error(ConnectionError("Connection has not yet been made."))
@@ -231,7 +236,7 @@ class Client(asyncio.Protocol):
         except Exception as exc:
             self._error(exc)
 
-    def _on_state(self, state: State):
+    def _on_state(self: Self, state: State) -> None:
         previous = self.state
 
         # When turning off, what I've observed is that we always receive
@@ -275,13 +280,17 @@ class Client(asyncio.Protocol):
             for rcv in list(self._receivers):
                 rcv.close()
 
-    def on(self, state: State, f: StateHandler) -> Handler:
-        """Call an event handler on a given state."""
+    def on(self: Self, state: State, f: StateHandler) -> Handler:
+        """
+        Call an event handler on a given state.
+        """
 
         return self.listens_to(state)(f)
 
-    def listens_to(self, state: State) -> Callable[[StateHandler], Handler]:
-        """Decorate an event handler to be called on a given state."""
+    def listens_to(self: Self, state: State) -> Callable[[StateHandler], Handler]:
+        """
+        Decorate an event handler to be called on a given state.
+        """
 
         want = state
 
@@ -294,13 +303,17 @@ class Client(asyncio.Protocol):
 
         return decorator
 
-    def once(self, state: State, f: StateHandler) -> Handler:
-        """Call an event handler on a given state once."""
+    def once(self: Self, state: State, f: StateHandler) -> Handler:
+        """
+        Call an event handler on a given state once.
+        """
 
         return self.listens_once(state)(f)
 
-    def listens_once(self, state: State) -> Callable[[StateHandler], Handler]:
-        """Decorate an event handler to be called once a given state occurs."""
+    def listens_once(self: Self, state: State) -> Callable[[StateHandler], Handler]:
+        """
+        Decorate an event handler to be called once a given state occurs.
+        """
 
         want = state
 
@@ -315,9 +328,11 @@ class Client(asyncio.Protocol):
         return decorator
 
     def wait_for(
-        self, state: State, timeout: Optional[int | float] = None
+        self: Self, state: State, timeout: Optional[int | float] = None
     ) -> asyncio.Future[None]:
-        """Wait for a given state to emit."""
+        """
+        Wait for a given state to emit.
+        """
 
         fut = self.loop.create_future()
 
@@ -329,8 +344,10 @@ class Client(asyncio.Protocol):
 
         return asyncio.ensure_future(asyncio.wait_for(fut, timeout=timeout))
 
-    async def subscribe(self, maxsize: int = 0) -> Receiver:
-        """Subscribe to state changes."""
+    async def subscribe(self: Self, maxsize: int = 0) -> Receiver:
+        """
+        Subscribe to state changes.
+        """
 
         rcv = Receiver(client=self, maxsize=maxsize)
         self._receivers.add(rcv)
@@ -349,13 +366,17 @@ class Client(asyncio.Protocol):
 
         return rcv
 
-    def receivers(self) -> List[Receiver]:
-        """Currently active receivers."""
+    def receivers(self: Self) -> List[Receiver]:
+        """
+        Currently active receivers.
+        """
 
         return list(self._receivers)
 
-    async def unsubscribe(self) -> None:
-        """Unsubscribe from state changes."""
+    async def unsubscribe(self: Self) -> None:
+        """
+        Unsubscribe from state changes.
+        """
 
         # If already unsubscribing or unsubscribed, we just need to let
         # events take their course
@@ -370,6 +391,11 @@ class Client(asyncio.Protocol):
 
     @asynccontextmanager
     async def session(self):
+        """
+        Subscribe to events inside an async context manager. Automatically
+        unsubscribe when done.
+        """
+
         rcv = await self.subscribe()
         try:
             yield rcv
@@ -381,6 +407,10 @@ async def create_connection(
     port: str,
     loop: Optional[asyncio.AbstractEventLoop] = None,
 ) -> Client:
+    """
+    Create a connection to the Plus Deck 2C.
+    """
+
     _loop = loop if loop else asyncio.get_running_loop()
 
     _, client = await create_serial_connection(
