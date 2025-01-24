@@ -408,7 +408,8 @@ class Client(asyncio.Protocol):
         self: Self, state: State, timeout: Optional[int | float] = None
     ) -> asyncio.Future[None]:
         """
-        Wait for a given state to emit.
+        Wait for a given state to emit. This is a low level method - client.subscribe
+        and the Receiver interface will meet most use cases.
         """
 
         fut = self.loop.create_future()
