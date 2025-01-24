@@ -1,22 +1,12 @@
 import asyncio
 from dataclasses import asdict, dataclass, is_dataclass
+from enum import Enum
 import functools
 import json
 import logging
 import os
 import sys
-from typing import (
-    Any,
-    Callable,
-    cast,
-    Coroutine,
-    Dict,
-    List,
-    Literal,
-    Optional,
-    Tuple,
-    Type,
-)
+from typing import Any, Callable, Coroutine, List, Literal, Optional
 import warnings
 
 try:
@@ -27,7 +17,7 @@ except ImportError:
 import click
 from serial.serialutil import SerialException
 
-from plusdeck.client import Client, create_connection
+from plusdeck.client import Client, create_connection, State
 from plusdeck.config import Config, GLOBAL_FILE
 
 logger = logging.getLogger(__name__)
@@ -57,13 +47,40 @@ LogLevel = (
     | Literal["CRITICAL"]
 )
 
+STATES: List[str] = [state.name for state in State]
+
+
+class PlusdeckState(click.Choice):
+    """
+    A Plus Deck 2C state.
+    """
+
+    name = "state"
+
+    def __init__(self: Self) -> None:
+        super().__init__(STATES)
+
+    def convert(
+        self: Self,
+        value: str,
+        param: Optional[click.Parameter],
+        ctx: Optional[click.Context],
+    ) -> State:
+        choice = super().convert(value, param, ctx)
+
+        return State[choice]
+
+
+STATE = PlusdeckState()
+
 
 def as_json(obj: Any) -> Any:
     """
     Convert an object into something that is JSON-serializable.
     """
-    if hasattr(obj, "as_dict"):
-        return obj.as_dict()
+
+    if isinstance(obj, Enum):
+        return obj.name
     elif is_dataclass(obj.__class__):
         return asdict(obj)
     else:
@@ -87,7 +104,7 @@ class Echo:
                 click.echo(json.dumps(repr(obj)), *args, **kwargs)
         else:
             click.echo(
-                obj if isinstance(obj, bytes) or isinstance(obj, str) else repr(obj),
+                obj if isinstance(obj, str) else repr(obj),
                 *args,
                 **kwargs,
             )
@@ -216,11 +233,136 @@ def main(
     logging.basicConfig(level=getattr(logging, log_level))
 
 
-# TODO: play a, b
-# TODO: fast-forward a, b
-# TODO: rewind a, b
-# TODO: pause
-# TODO: stop
-# TODO: eject
-# TODO: expect/wait-for state
-# TODO: subscribe/listen
+@main.group
+def play() -> None:
+    """
+    Play a tape
+    """
+
+
+@play.command(name="a")
+@pass_client()
+async def play_a(client: Client) -> None:
+    """
+    Play side A of the tape
+    """
+
+    client.play_a()
+
+
+@play.command(name="b")
+@pass_client()
+async def play_b(client: Client) -> None:
+    """
+    Play side B of the tape
+    """
+
+    client.play_b()
+
+
+@main.group
+def fast_forward() -> None:
+    """
+    Fast-forward a tape
+    """
+
+
+@fast_forward.command(name="a")
+@pass_client()
+async def fast_forward_a(client: Client) -> None:
+    """
+    Fast-forward side A of the tape
+    """
+
+    client.fast_forward_a()
+
+
+@fast_forward.command(name="b")
+@pass_client()
+async def fast_forward_b(client: Client) -> None:
+    """
+    Fast-forward side B of the tape
+    """
+
+    client.fast_forward_b()
+
+
+@main.group
+def rewind() -> None:
+    """
+    Rewind a tape
+    """
+
+
+@rewind.command(name="a")
+@pass_client()
+async def rewind_a(client: Client) -> None:
+    """
+    Rewind side A of the tape
+    """
+
+    client.rewind_a()
+
+
+@rewind.command(name="b")
+@pass_client()
+async def rewind_b(client: Client) -> None:
+    """
+    Rewind side B of the tape
+    """
+
+    client.rewind_b()
+
+
+@main.command
+@pass_client()
+async def pause(client: Client) -> None:
+    """
+    Pause the tape
+    """
+
+    client.pause()
+
+
+@main.command
+@pass_client()
+async def stop(client: Client) -> None:
+    """
+    Stop the tape
+    """
+
+    client.stop()
+
+
+@main.command
+@pass_client()
+async def eject(client: Client) -> None:
+    """
+    Eject the tape
+    """
+
+    client.eject()
+
+
+@main.command
+@click.argument("state", type=STATE)
+@pass_client()
+async def expect(client: Client, state: State) -> None:
+    """
+    Wait for an expected state
+    """
+
+    async with client.session() as rcv:
+        await rcv.expect(state)
+
+
+@main.command
+@pass_client(run_forever=True)
+async def listen(client: Client) -> None:
+    """
+    Listen for state change events
+    """
+
+    async with client.session() as rcv:
+        async for state in rcv:
+            echo(state)
