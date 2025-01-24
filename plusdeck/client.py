@@ -4,7 +4,12 @@ import asyncio
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from enum import Enum
-from typing import Callable, List, Optional, Set, Type
+from typing import Any, Callable, List, Optional, Set, Type
+
+try:
+    from typing import Self
+except ImportError:
+    Self = Any
 
 from pyee.asyncio import AsyncIOEventEmitter
 from serial import EIGHTBITS, PARITY_NONE, STOPBITS_ONE
@@ -108,19 +113,19 @@ class Receiver(asyncio.Queue[State]):
     _client: "Client"
     _receiving: bool
 
-    def __init__(self, client: "Client", maxsize=0):
+    def __init__(self: Self, client: "Client", maxsize=0):
         super().__init__(maxsize)
         self._client = client
         self._receiving = True
 
-    async def expect(self, state: State) -> None:
+    async def expect(self: Self, state: State) -> None:
         """Receive state changes until the expected state."""
         current = await self.get()
 
         while current != state:
             current = await self.get()
 
-    async def __aiter__(self) -> AsyncGenerator[State, None]:
+    async def __aiter__(self: Self) -> AsyncGenerator[State, None]:
         """Iterate over state change events."""
 
         while True:
@@ -134,7 +139,7 @@ class Receiver(asyncio.Queue[State]):
             if state == State.UNSUBSCRIBED:
                 self._receiving = False
 
-    def close(self) -> None:
+    def close(self: Self) -> None:
         """Close the receiver."""
 
         self._receiving = False
@@ -155,34 +160,62 @@ class Client(asyncio.Protocol):
     _receivers: Set[Receiver]
 
     def __init__(
-        self,
+        self: Self,
         loop: Optional[asyncio.AbstractEventLoop] = None,
     ):
         _loop = loop if loop else asyncio.get_running_loop()
 
         self.state: State = State.UNSUBSCRIBED
         self.events: AsyncIOEventEmitter = AsyncIOEventEmitter(_loop)
-        self._loop: asyncio.AbstractEventLoop = _loop
-        self._connection_made: asyncio.Future[None] = self._loop.create_future()
+        self.loop: asyncio.AbstractEventLoop = _loop
+        self._connection_made: asyncio.Future[None] = self.loop.create_future()
+        self._closed: asyncio.Future[None] = self.loop.create_future()
         self._receivers: Set[Receiver] = set()
 
-    def connection_made(self, transport: asyncio.BaseTransport):
+    def connection_made(self: Self, transport: asyncio.BaseTransport):
         if not isinstance(transport, SerialTransport):
-            raise ConnectionError("Transport is not a SerialTransport")
+            self._connection_made.set_exception(
+                ConnectionError("Transport is not a SerialTransport")
+            )
+            return
 
         self._transport = transport
         self._connection_made.set_result(None)
 
-    def close(self) -> None:
-        if not self._transport:
-            raise ConnectionError("Can not close uninitialized connection")
-        self._transport.close()
+    @property
+    def closed(self: Self) -> asyncio.Future:
+        """
+        An asyncio.Future that resolves when the connection is closed. This
+        may be due either to calling `client.close()` or an Exception.
+        """
+        return self._closed
+
+    def close(self: Self) -> None:
+        self._close()
+
+    # Internal method to close the connection, potentially due to an exception.
+    def _close(self: Self, exc: Optional[Exception] = None) -> None:
+        if self._transport:
+            self._transport.close()
+
+        if self.closed.done():
+            if exc:
+                raise exc
+        elif exc:
+            self.closed.set_exception(exc)
+        else:
+            self.closed.set_result(None)
+
+    def _error(self: Self, exc: Exception) -> None:
+        # TODO: Send exception to any open receivers
+        self._close(exc)
 
     def send(self, command: Command):
         """Send a command to the Plus Deck 2C."""
 
         if not self._transport:
-            raise ConnectionError("Connection has not yet been made.")
+            self._error(ConnectionError("Connection has not yet been made."))
+            return
 
         if command == Command.SUBSCRIBE:
             self._on_state(State.SUBSCRIBING)
@@ -192,8 +225,11 @@ class Client(asyncio.Protocol):
         self._transport.write(command.value)
 
     def data_received(self, data):
-        for state in State.from_bytes(data):
-            self._on_state(state)
+        try:
+            for state in State.from_bytes(data):
+                self._on_state(state)
+        except Exception as exc:
+            self._error(exc)
 
     def _on_state(self, state: State):
         previous = self.state
@@ -209,11 +245,17 @@ class Client(asyncio.Protocol):
 
         if previous == State.UNSUBSCRIBING:
             if not (state == State.PAUSED_A or state == State.PAUSED_B):
-                raise SubscriptionError(f"Unexpected state {state} while unsubscribing")
+                self._error(
+                    SubscriptionError(f"Unexpected state {state} while unsubscribing")
+                )
+                return
             state = State.UNSUBSCRIBED
 
         if previous == State.UNSUBSCRIBED and state != State.SUBSCRIBING:
-            raise SubscriptionError(f"Unexpected state {state} while unsubscribed")
+            self._error(
+                SubscriptionError(f"Unexpected state {state} while unsubscribed")
+            )
+            return
 
         self.state = state
 
@@ -227,7 +269,7 @@ class Client(asyncio.Protocol):
                 self.events.emit("unsubscribed")
 
             for rcv in list(self._receivers):
-                self._loop.create_task(rcv.put(state))
+                self.loop.create_task(rcv.put(state))
 
         if state == State.UNSUBSCRIBED:
             for rcv in list(self._receivers):
@@ -277,7 +319,7 @@ class Client(asyncio.Protocol):
     ) -> asyncio.Future[None]:
         """Wait for a given state to emit."""
 
-        fut = self._loop.create_future()
+        fut = self.loop.create_future()
 
         @self.listens_once(state)
         def listener() -> None:
@@ -336,7 +378,7 @@ class Client(asyncio.Protocol):
 
 
 async def create_connection(
-    url: str,
+    port: str,
     loop: Optional[asyncio.AbstractEventLoop] = None,
 ) -> Client:
     _loop = loop if loop else asyncio.get_running_loop()
@@ -344,7 +386,7 @@ async def create_connection(
     _, client = await create_serial_connection(
         _loop,
         lambda: Client(_loop),
-        url,
+        port,
         baudrate=9600,
         bytesize=EIGHTBITS,
         parity=PARITY_NONE,
