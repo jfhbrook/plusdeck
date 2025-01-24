@@ -488,3 +488,23 @@ async def create_connection(
     await client._connection_made
 
     return client
+
+
+@asynccontextmanager
+async def connection(
+    port: str,
+    loop: Optional[asyncio.AbstractEventLoop] = None,
+) -> AsyncGenerator[Client, None]:
+    """
+    Create a connection to Plus Deck 2C, with an associated async context.
+
+    This context will automatically close the connection on exit and wait for the
+    connection to close.
+    """
+
+    client = await create_connection(port, loop=loop)
+
+    yield client
+
+    client.close()
+    await client.closed
