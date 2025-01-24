@@ -56,6 +56,14 @@ _clean-compile:
 # Development tooling - linting, formatting, etc
 #
 
+# Run a command or script
+run *argv:
+  . ./venv/bin/activate && {{ argv }}
+
+# Run crystalfontz cli
+start *argv:
+  . ./venv/bin/activate && plusdeck {{ argv }}
+
 # Format with black and isort
 format:
   . ./venv/bin/activate &&  black './plusdeck' ./tests

@@ -23,6 +23,9 @@ dependencies = [
   "pyyaml",
 ]
 
+[project.scripts]
+plusdeck = "plusdeck.cli:main"
+
 
 [project.optional-dependencies]
 dev = [
