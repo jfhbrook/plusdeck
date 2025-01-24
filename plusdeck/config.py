@@ -1,4 +1,4 @@
-from configurence import BaseConfig, config, field
+from configurence import BaseConfig, config, field, global_file
 from serial.tools.list_ports import comports
 
 """
@@ -8,6 +8,7 @@ configuring the ipywidgets player.
 """
 
 APP_NAME = "plusdeck"
+GLOBAL_FILE = global_file(APP_NAME)
 
 
 def default_port() -> str:
@@ -16,8 +17,12 @@ def default_port() -> str:
     return comports(include_links=True)[0].device
 
 
+DEFAULT_TIMEOUT = 1.0
+
+
 @config(APP_NAME)
 class Config(BaseConfig):
     """A config for the Plus Deck 2C PC Cassette Deck."""
 
-    port: str = field(default_factory=default_port, env_var="PLUSDECK_PORT")
+    port: str = field(default_factory=default_port, env_var="PORT")
+    timeout: float = field(default=DEFAULT_TIMEOUT, env_var="TIMEOUT")
