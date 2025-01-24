@@ -4,7 +4,7 @@ import asyncio
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from enum import Enum
-from typing import Any, Callable, List, Optional, Set, Type
+from typing import Any, Callable, List, Optional, Set, Tuple, Type
 
 try:
     from typing import Self
@@ -106,21 +106,31 @@ class State(Enum):
 Handler = Callable[[State], None]
 StateHandler = Callable[[], None]
 
+Event = Tuple[Exception, None] | Tuple[None, State]
 
-class Receiver(asyncio.Queue[State]):
+
+class Receiver(asyncio.Queue[Event]):
     """Receive state change events from the Plus Deck 2C PC Cassette Deck."""
 
     _client: "Client"
     _receiving: bool
 
-    def __init__(self: Self, client: "Client", maxsize=0):
+    def __init__(self: Self, client: "Client", maxsize=0) -> None:
         super().__init__(maxsize)
         self._client = client
         self._receiving = True
 
+    async def get_state(self: Self) -> State:
+        exc, state = await super().get()
+        if exc:
+            raise exc
+        else:
+            assert state, "State must be defined"
+            return state
+
     async def expect(self: Self, state: State) -> None:
         """Receive state changes until the expected state."""
-        current = await self.get()
+        current = await self.get_state()
 
         while current != state:
             current = await self.get()
@@ -132,7 +142,7 @@ class Receiver(asyncio.Queue[State]):
             if not self._receiving:
                 break
 
-            state = await self.get()
+            state = await self.get_state()
 
             yield state
 
@@ -210,7 +220,12 @@ class Client(asyncio.Protocol):
             self.closed.set_result(None)
 
     def _error(self: Self, exc: Exception) -> None:
-        # TODO: Send exception to any open receivers
+        receivers = self.receivers()
+        if receivers:
+            for rcv in receivers:
+                rcv.put_nowait((exc, None))
+            return
+
         self._close(exc)
 
     def send(self, command: Command) -> None:
@@ -336,7 +351,7 @@ class Client(asyncio.Protocol):
                 self.events.emit("unsubscribed")
 
             for rcv in list(self._receivers):
-                self.loop.create_task(rcv.put(state))
+                rcv.put_nowait((None, state))
 
         if state == State.UNSUBSCRIBED:
             for rcv in list(self._receivers):
