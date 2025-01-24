@@ -1,5 +1,7 @@
 import asyncio
 from dataclasses import asdict, dataclass, is_dataclass
+import functools
+import json
 import logging
 import os
 import sys
@@ -15,6 +17,7 @@ from typing import (
     Tuple,
     Type,
 )
+import warnings
 
 try:
     from typing import Self
@@ -24,10 +27,13 @@ except ImportError:
 import click
 from serial.serialutil import SerialException
 
+from plusdeck.client import Client, create_connection
 from plusdeck.config import Config, GLOBAL_FILE
 
-
 logger = logging.getLogger(__name__)
+
+OutputMode = Literal["text"] | Literal["json"]
+
 
 @dataclass
 class Obj:
@@ -39,14 +45,9 @@ class Obj:
     config: Config
     global_: bool
     port: str
-    model: str
-    hardware_rev: Optional[str]
-    firmware_rev: Optional[str]
     output: OutputMode
     timeout: Optional[float]
-    retry_times: Optional[int]
-    baud_rate: BaudRate
-    effect_options: Optional[EffectOptions] = None
+
 
 LogLevel = (
     Literal["DEBUG"]
@@ -65,8 +66,6 @@ def as_json(obj: Any) -> Any:
         return obj.as_dict()
     elif is_dataclass(obj.__class__):
         return asdict(obj)
-    elif isinstance(obj, bytes):
-        return format_json_bytes(obj)
     else:
         return obj
 
@@ -101,10 +100,7 @@ WrappedAsyncCommand = Callable[..., None]
 AsyncCommandDecorator = Callable[[AsyncCommand], WrappedAsyncCommand]
 
 
-def pass_client(
-    run_forever: bool = False,
-    report_handler_cls: Type[ReportHandler] = NoopReportHandler,
-) -> AsyncCommandDecorator:
+def pass_client(run_forever: bool = False) -> AsyncCommandDecorator:
     """
     Create a client and pass it to the decorated click handler.
     """
@@ -114,46 +110,23 @@ def pass_client(
         @functools.wraps(fn)
         def wrapped(obj: Obj, *args, **kwargs) -> None:
             port: str = obj.port
-            model = obj.model
-            hardware_rev = obj.hardware_rev
-            firmware_rev = obj.firmware_rev
             output = obj.output
             timeout = obj.timeout
-            retry_times = obj.retry_times
-            baud_rate: BaudRate = obj.baud_rate
-
-            report_handler = report_handler_cls()
-
-            # Set the output mode on the report handler
-            if isinstance(report_handler, CliReportHandler):
-                report_handler.mode = output
 
             # Set the output mode for echo
             echo.mode = output
 
             async def main() -> None:
                 try:
-                    client: Client = await create_connection(
-                        port,
-                        model=model,
-                        hardware_rev=hardware_rev,
-                        firmware_rev=firmware_rev,
-                        report_handler=report_handler,
-                        timeout=timeout if timeout is not None else DEFAULT_TIMEOUT,
-                        retry_times=(
-                            retry_times
-                            if retry_times is not None
-                            else DEFAULT_RETRY_TIMES
-                        ),
-                        baud_rate=baud_rate,
-                    )
+                    client: Client = await create_connection(port)
                 except SerialException as exc:
                     click.echo(exc)
                     sys.exit(1)
 
                 # Giddyup!
                 try:
-                    await fn(client, *args, **kwargs)
+                    async with asyncio.timeout(timeout):
+                        await fn(client, *args, **kwargs)
                 except TimeoutError:
                     echo(f"Command timed out after {timeout} seconds.")
                     sys.exit(1)
@@ -197,23 +170,6 @@ def pass_client(
     help="The serial port the device is connected to",
 )
 @click.option(
-    "--model",
-    envvar="CRYSTALFONTZ_MODEL",
-    help="The model of the device",
-    type=click.Choice(["CFA533", "CFA633"]),
-    default="CFA533",
-)
-@click.option(
-    "--hardware-rev",
-    envvar="CRYSTALFONTZ_HARDWARE_REV",
-    help="The hardware revision of the device",
-)
-@click.option(
-    "--firmware-rev",
-    envvar="CRYSTALFONTZ_FIRMWARE_REV",
-    help="The firmware revision of the device",
-)
-@click.option(
     "--output",
     type=click.Choice(["text", "json"]),
     default="text",
@@ -225,18 +181,6 @@ def pass_client(
     envvar="CRYSTALFONTZ_TIMEOUT",
     help="How long to wait for a response from the device before timing out",
 )
-@click.option(
-    "--retry-times",
-    type=int,
-    envvar="CRYSTALFONTZ_RETRY_TIMES",
-    help="How many times to retry a command if a response times out",
-)
-@click.option(
-    "--baud",
-    type=click.Choice([str(SLOW_BAUD_RATE), str(FAST_BAUD_RATE)]),
-    envvar="CRYSTALFONTZ_BAUD_RATE",
-    help="The baud rate to use when connecting to the device",
-)
 @click.pass_context
 def main(
     ctx: click.Context,
@@ -244,19 +188,13 @@ def main(
     config_file: Optional[str],
     log_level: LogLevel,
     port: Optional[str],
-    model: str,
-    hardware_rev: Optional[str],
-    firmware_rev: Optional[str],
     output: Optional[OutputMode],
     timeout: Optional[float],
-    retry_times: Optional[int],
-    baud: Optional[str],
 ) -> None:
     """
     Control your Crystalfontz device.
     """
 
-    baud_rate = cast(Optional[BaudRate], int(baud) if baud else None)
     file = None
     if config_file:
         if global_:
@@ -271,16 +209,8 @@ def main(
         config=config,
         global_=global_,
         port=port or config.port,
-        model=model or config.model,
-        hardware_rev=hardware_rev or config.hardware_rev,
-        firmware_rev=firmware_rev or config.firmware_rev,
         output=output or "text",
         timeout=timeout or config.timeout,
-        retry_times=retry_times if retry_times is not None else config.retry_times,
-        baud_rate=baud_rate or config.baud_rate,
     )
 
     logging.basicConfig(level=getattr(logging, log_level))
-
-
-
