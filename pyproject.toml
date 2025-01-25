@@ -14,6 +14,7 @@ keywords = []
 license = { text = "MIT" }
 dependencies = [
   "appdirs",
+  "click",
   "configurence",
   "ipywidgets",
   "pyee",
@@ -21,6 +22,9 @@ dependencies = [
   "pyserial-asyncio",
   "pyyaml",
 ]
+
+[project.scripts]
+plusdeck = "plusdeck.cli:main"
 
 
 [project.optional-dependencies]

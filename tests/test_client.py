@@ -337,7 +337,7 @@ async def test_receive_state(client: Client, buffer, state):
 
     assert rcv in set(client.receivers())
 
-    fut = asyncio.wait_for(rcv.get(), timeout=TEST_TIMEOUT)
+    fut = asyncio.wait_for(rcv.get_state(), timeout=TEST_TIMEOUT)
 
     client.data_received(buffer)
 
@@ -384,14 +384,14 @@ async def test_receive_duplicate_state(client: Client):
 
     assert rcv in set(client.receivers())
 
-    fut = asyncio.wait_for(rcv.get(), timeout=TEST_TIMEOUT)
+    fut = asyncio.wait_for(rcv.get_state(), timeout=TEST_TIMEOUT)
 
     client.data_received(b"\x32")
 
     assert (await fut) == State.STOPPED
     assert client.state == State.STOPPED
 
-    fut2 = asyncio.wait_for(rcv.get(), timeout=TEST_TIMEOUT)
+    fut2 = asyncio.wait_for(rcv.get_state(), timeout=TEST_TIMEOUT)
 
     client.data_received(b"\x32")
 
@@ -436,9 +436,9 @@ async def test_many_receivers(client: Client):
     await ejected
 
     # Should have three states from first receiver
-    state1a = await asyncio.wait_for(rcv1.get(), timeout=TEST_TIMEOUT)
-    state1b = await asyncio.wait_for(rcv1.get(), timeout=TEST_TIMEOUT)
-    state1c = await asyncio.wait_for(rcv1.get(), timeout=TEST_TIMEOUT)
+    state1a = await asyncio.wait_for(rcv1.get_state(), timeout=TEST_TIMEOUT)
+    state1b = await asyncio.wait_for(rcv1.get_state(), timeout=TEST_TIMEOUT)
+    state1c = await asyncio.wait_for(rcv1.get_state(), timeout=TEST_TIMEOUT)
 
     assert [state1a, state1b, state1c] == [
         State.SUBSCRIBING,
@@ -447,7 +447,7 @@ async def test_many_receivers(client: Client):
     ]
 
     # Should have one state from second receiver
-    state2 = await asyncio.wait_for(rcv2.get(), timeout=TEST_TIMEOUT)
+    state2 = await asyncio.wait_for(rcv2.get_state(), timeout=TEST_TIMEOUT)
 
     assert state2 == State.EJECTED
 
@@ -479,8 +479,8 @@ async def test_unsubscribe(client: Client, buffer):
     assert rcv in set(client.receivers())
 
     fut_wait_for = client.wait_for(State.UNSUBSCRIBED, timeout=TEST_TIMEOUT)
-    fut_get1 = asyncio.wait_for(rcv.get(), timeout=TEST_TIMEOUT)
-    fut_get2 = asyncio.wait_for(rcv.get(), timeout=TEST_TIMEOUT)
+    fut_get1 = asyncio.wait_for(rcv.get_state(), timeout=TEST_TIMEOUT)
+    fut_get2 = asyncio.wait_for(rcv.get_state(), timeout=TEST_TIMEOUT)
 
     client.send(Command.UNSUBSCRIBE)
     client.data_received(buffer)
@@ -492,7 +492,7 @@ async def test_unsubscribe(client: Client, buffer):
     assert (await fut_get2) == State.UNSUBSCRIBED
 
     with pytest.raises(asyncio.TimeoutError):
-        await asyncio.wait_for(rcv.get(), timeout=TEST_TIMEOUT)
+        await asyncio.wait_for(rcv.get_state(), timeout=TEST_TIMEOUT)
 
 
 @pytest.mark.parametrize(
@@ -516,8 +516,10 @@ async def test_failed_unsubscribe(client: Client, state: State):
 
     client.state = State.UNSUBSCRIBING
 
+    client.data_received(state.to_bytes())
+
     with pytest.raises(SubscriptionError):
-        client.data_received(state.to_bytes())
+        await client.closed
 
 
 @pytest.mark.parametrize("state", [State.UNSUBSCRIBING, State.UNSUBSCRIBED])
@@ -603,9 +605,9 @@ async def test_session_queue(client: Client):
     async with client.session() as rcv:
         client.send(Command.PLAY_A)
 
-        state1 = await asyncio.wait_for(rcv.get(), timeout=TEST_TIMEOUT)
-        state2 = await asyncio.wait_for(rcv.get(), timeout=TEST_TIMEOUT)
-        state3 = await asyncio.wait_for(rcv.get(), timeout=TEST_TIMEOUT)
+        state1 = await asyncio.wait_for(rcv.get_state(), timeout=TEST_TIMEOUT)
+        state2 = await asyncio.wait_for(rcv.get_state(), timeout=TEST_TIMEOUT)
+        state3 = await asyncio.wait_for(rcv.get_state(), timeout=TEST_TIMEOUT)
 
     await asyncio.wait_for(unsubbed, timeout=TEST_TIMEOUT)
 
