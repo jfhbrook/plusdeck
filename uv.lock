@@ -1415,7 +1415,7 @@ wheels = [
 
 [[package]]
 name = "plusdeck"
-version = "1.0.0"
+version = "1.0.1"
 source = { editable = "." }
 dependencies = [
     { name = "appdirs" },
@@ -1425,7 +1425,6 @@ dependencies = [
     { name = "pyee" },
     { name = "pyserial" },
     { name = "pyserial-asyncio" },
-    { name = "pyyaml" },
 ]
 
 [package.dev-dependencies]
@@ -1455,7 +1454,6 @@ requires-dist = [
     { name = "pyee" },
     { name = "pyserial" },
     { name = "pyserial-asyncio" },
-    { name = "pyyaml" },
 ]
 
 [package.metadata.requires-dev]
