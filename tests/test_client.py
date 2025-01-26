@@ -13,7 +13,7 @@ TEST_TIMEOUT = 0.01
 
 
 @pytest.mark.asyncio
-async def test_online(client: Client):
+async def test_online(client: Client) -> None:
     """Comes online when the connection is made."""
 
     client.connection_made(
@@ -32,7 +32,7 @@ async def test_online(client: Client):
     [(command, command.to_bytes()) for command in Command],
 )
 @pytest.mark.asyncio
-async def test_command(client: Client, command: Command, code: bytes):
+async def test_command(client: Client, command: Command, code: bytes) -> None:
     """Sends Commands to the transport."""
     client.send(command)
     assert client._transport is not None
@@ -54,14 +54,14 @@ async def test_command(client: Client, command: Command, code: bytes):
     ],
 )
 @pytest.mark.asyncio
-async def test_state_events(client: Client, state: State, data: bytes):
+async def test_state_events(client: Client, state: State, data: bytes) -> None:
     """Emits the state event."""
 
     client.state = State.SUBSCRIBED
 
     received: Optional[State] = None
 
-    def handler(state: State):
+    def handler(state: State) -> None:
         nonlocal received
         received = state
 
@@ -73,7 +73,7 @@ async def test_state_events(client: Client, state: State, data: bytes):
 
 
 @pytest.mark.asyncio
-async def test_subscription_events(client: Client):
+async def test_subscription_events(client: Client) -> None:
     """Emits subscription events."""
 
     # Expecting a subscribed state
@@ -129,13 +129,13 @@ async def test_subscription_events(client: Client):
 
 
 @pytest.mark.asyncio
-async def test_listens_to(client: Client):
+async def test_listens_to(client: Client) -> None:
     """Listens for state."""
 
     call_count = 0
 
     @client.listens_to(State.PLAYING_A)
-    def handler():
+    def handler() -> None:
         nonlocal call_count
         call_count += 1
 
@@ -156,12 +156,12 @@ async def test_listens_to(client: Client):
 
 
 @pytest.mark.asyncio
-async def test_on(client: Client):
+async def test_on(client: Client) -> None:
     """Calls handler on state."""
 
     call_count = 0
 
-    def handler():
+    def handler() -> None:
         nonlocal call_count
         call_count += 1
 
@@ -184,13 +184,13 @@ async def test_on(client: Client):
 
 
 @pytest.mark.asyncio
-async def test_listens_once(client: Client):
+async def test_listens_once(client: Client) -> None:
     """Listens for state once."""
 
     call_count = 0
 
     @client.listens_once(State.PLAYING_A)
-    def handler():
+    def handler() -> None:
         nonlocal call_count
         call_count += 1
 
@@ -216,11 +216,11 @@ async def test_listens_once(client: Client):
 
 
 @pytest.mark.asyncio
-async def test_once(client: Client):
+async def test_once(client: Client) -> None:
     """Calls handler once."""
     call_count = 0
 
-    def handler():
+    def handler() -> None:
         nonlocal call_count
         call_count += 1
 
@@ -262,7 +262,7 @@ async def test_once(client: Client):
     ],
 )
 @pytest.mark.asyncio
-async def test_wait_for(client: Client, state: State):
+async def test_wait_for(client: Client, state: State) -> None:
     """Waits for a given state."""
 
     fut = client.wait_for(state, timeout=TEST_TIMEOUT)
@@ -273,14 +273,14 @@ async def test_wait_for(client: Client, state: State):
 
 
 @pytest.mark.asyncio
-async def test_subscribe_when_unsubscribed(client: Client):
+async def test_subscribe_when_unsubscribed(client: Client) -> None:
     """Waits for subscribed event when subscribing."""
 
     # Ensure starting state is unsubscribed
     client.state = State.UNSUBSCRIBED
 
     # When transport write is called, simulate receiving State.SUBSCRIBED
-    def emit_ready(_):
+    def emit_ready(_) -> None:
         client.data_received(b"\x15")
 
     assert client._transport is not None
@@ -300,7 +300,7 @@ async def test_subscribe_when_unsubscribed(client: Client):
 
 @pytest.mark.parametrize("state", [State.EJECTED, State.SUBSCRIBED])
 @pytest.mark.asyncio
-async def test_subscribe_when_subscribed(client: Client, state: State):
+async def test_subscribe_when_subscribed(client: Client, state: State) -> None:
     """Creates receiver when already subscribed."""
 
     client.state = state
@@ -328,7 +328,7 @@ async def test_subscribe_when_subscribed(client: Client, state: State):
     ],
 )
 @pytest.mark.asyncio
-async def test_receive_state(client: Client, buffer, state):
+async def test_receive_state(client: Client, buffer, state) -> None:
     """Receives a state."""
 
     client.state = State.EJECTED
@@ -359,7 +359,7 @@ async def test_receive_state(client: Client, buffer, state):
     ],
 )
 @pytest.mark.asyncio
-async def test_expect_state(client: Client, buffer, state):
+async def test_expect_state(client: Client, buffer, state) -> None:
     """Expect a state."""
 
     client.state = State.EJECTED
@@ -376,7 +376,15 @@ async def test_expect_state(client: Client, buffer, state):
 
 
 @pytest.mark.asyncio
-async def test_receive_duplicate_state(client: Client):
+async def test_expect_timeout(client: Client) -> None:
+    rcv = await asyncio.wait_for(client.subscribe(), timeout=TEST_TIMEOUT)
+
+    with pytest.raises(TimeoutError):
+        await rcv.expect(State.EJECTED)
+
+
+@pytest.mark.asyncio
+async def test_receive_duplicate_state(client: Client) -> None:
     """Receives a state once."""
     client.state = State.EJECTED
 
@@ -402,12 +410,12 @@ async def test_receive_duplicate_state(client: Client):
 
 
 @pytest.mark.asyncio
-async def test_many_receivers(client: Client):
+async def test_many_receivers(client: Client) -> None:
     """Juggles many receivers."""
 
     client.state = State.UNSUBSCRIBED
 
-    def emit_ready(_):
+    def emit_ready(_) -> None:
         client.data_received(b"\x15")
 
     assert client._transport is not None
@@ -453,7 +461,7 @@ async def test_many_receivers(client: Client):
 
 
 @pytest.mark.asyncio
-async def test_close_receiver(client: Client):
+async def test_close_receiver(client: Client) -> None:
     client.state = State.EJECTED
 
     rcv = await asyncio.wait_for(client.subscribe(), timeout=TEST_TIMEOUT)
@@ -469,7 +477,7 @@ async def test_close_receiver(client: Client):
     "buffer", [state.to_bytes() for state in {State.PAUSED_A, State.PAUSED_B}]
 )
 @pytest.mark.asyncio
-async def test_unsubscribe(client: Client, buffer):
+async def test_unsubscribe(client: Client, buffer) -> None:
     """Unsubscribe a subscribed client."""
 
     client.state = State.EJECTED
@@ -511,7 +519,7 @@ async def test_unsubscribe(client: Client, buffer):
     ],
 )
 @pytest.mark.asyncio
-async def test_failed_unsubscribe(client: Client, state: State):
+async def test_failed_unsubscribe(client: Client, state: State) -> None:
     """Raises an error if client fails to unsubscribe."""
 
     client.state = State.UNSUBSCRIBING
@@ -524,7 +532,7 @@ async def test_failed_unsubscribe(client: Client, state: State):
 
 @pytest.mark.parametrize("state", [State.UNSUBSCRIBING, State.UNSUBSCRIBED])
 @pytest.mark.asyncio
-async def test_unsubscribe_when_unsubscribed(client: Client, state: State):
+async def test_unsubscribe_when_unsubscribed(client: Client, state: State) -> None:
     """Unsubscribes when already unsubscribed."""
 
     client.state = state
@@ -533,7 +541,7 @@ async def test_unsubscribe_when_unsubscribed(client: Client, state: State):
 
 
 @pytest.mark.asyncio
-async def test_unsubscribe_when_unsubscribing(client: Client):
+async def test_unsubscribe_when_unsubscribing(client: Client) -> None:
     """Unsubscribes when already unsubscribing."""
 
     client.state = State.SUBSCRIBING
@@ -553,7 +561,7 @@ async def test_unsubscribe_when_unsubscribing(client: Client):
     "buffer", [state.to_bytes() for state in {State.PAUSED_A, State.PAUSED_B}]
 )
 @pytest.mark.asyncio
-async def test_iter_receiver(client: Client, buffer: bytes):
+async def test_iter_receiver(client: Client, buffer: bytes) -> None:
     """Iterates a receiver."""
 
     client.state = State.EJECTED
@@ -572,7 +580,7 @@ async def test_iter_receiver(client: Client, buffer: bytes):
 
     states = [State.UNSUBSCRIBED, State.UNSUBSCRIBING, State.PLAYING_A, State.STOPPED]
 
-    async def iterate():
+    async def iterate() -> None:
         async for state in rcv:
             assert state == states.pop()
 
@@ -584,13 +592,13 @@ async def test_iter_receiver(client: Client, buffer: bytes):
 
 
 @pytest.mark.asyncio
-async def test_session_queue(client: Client):
+async def test_session_queue(client: Client) -> None:
     client.state = State.UNSUBSCRIBED
 
     received = [State.PAUSED_A, State.PLAYING_A, State.SUBSCRIBED]
 
     # When transport write is called, simulate receiving State.SUBSCRIBED
-    def emit_data(_):
+    def emit_data(_) -> None:
         client.data_received(received.pop().to_bytes())
 
     assert client._transport is not None
@@ -627,13 +635,13 @@ async def test_session_queue(client: Client):
 
 
 @pytest.mark.asyncio
-async def test_session_iterator(client: Client):
+async def test_session_iterator(client: Client) -> None:
     client.state = State.UNSUBSCRIBED
 
     received = [State.PAUSED_A, State.PLAYING_A, State.SUBSCRIBED]
 
     # When transport write is called, simulate receiving State.SUBSCRIBED
-    def emit_data(_):
+    def emit_data(_) -> None:
         client.data_received(received.pop().to_bytes())
 
     assert client._transport is not None
