@@ -424,7 +424,8 @@ async def expect(client: Client, state: State) -> None:
 @main.command
 @click.option("--for", "for_", type=float, help="Amount of time to listen for reports")
 @pass_client(run_forever=True)
-async def subscribe(client: Client, for_: Optional[float]) -> None:
+@click.pass_obj
+async def subscribe(obj: Obj, client: Client, for_: Optional[float]) -> None:
     """
     Subscribe to state changes
     """
@@ -433,10 +434,14 @@ async def subscribe(client: Client, for_: Optional[float]) -> None:
 
     async def subscribe() -> None:
         async with client.session() as rcv:
-            async for state in rcv:
+            while True:
                 if not running:
                     break
-                echo(state)
+                try:
+                    state = await rcv.get_state(timeout=obj.timeout)
+                    echo(state)
+                except TimeoutError:
+                    pass
 
     subscription = client.loop.create_task(subscribe())
 

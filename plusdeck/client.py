@@ -125,13 +125,14 @@ class Receiver(asyncio.Queue[Event]):
         self._default_timeout = timeout
         self._receiving = True
 
-    async def get_state(self: Self) -> State:
-        exc, state = await super().get()
-        if exc:
-            raise exc
-        else:
-            assert state, "State must be defined"
-            return state
+    async def get_state(self: Self, timeout: Optional[float] = None) -> State:
+        async with asyncio.timeout(timeout):
+            exc, state = await super().get()
+            if exc:
+                raise exc
+            else:
+                assert state, "State must be defined"
+                return state
 
     async def expect(self: Self, state: State, timeout: Optional[float] = None) -> None:
         """
@@ -144,7 +145,7 @@ class Receiver(asyncio.Queue[Event]):
             current = await self.get_state()
 
             while current != state:
-                current = await self.get()
+                current = await self.get_state()
 
     async def __aiter__(self: Self) -> AsyncGenerator[State, None]:
         """Iterate over state change events."""
