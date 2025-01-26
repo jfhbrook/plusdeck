@@ -1,7 +1,8 @@
-site_name: plusdeck_client
+site_name: plusdeck
 
 theme:
-  name: bootstrap386
+  name: readthedocs
 
 plugins:
+  - include-markdown
   - mkdocstrings

@@ -12,6 +12,20 @@ description = "Serial client for Plus Deck 2C PC Cassette Drive"
 readme = "README.md"
 keywords = []
 license = { text = "MIT" }
+classifiers = [
+    "Programming Language :: Python",
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Other/Nonlisted Topic",
+]
+
 requires-python = ">=3.11"
 dependencies = [
   "appdirs",
@@ -37,6 +51,7 @@ dev = [
   "isort",
   "jupyterlab",
   "mkdocs",
+  "mkdocs-include-markdown-plugin",
   "mkdocstrings[python]",
   "rich",
   "tox",
