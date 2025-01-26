@@ -44,10 +44,6 @@ class SubscriptionError(StateError):
     pass
 
 
-# Chosen through trial and error
-DEFAULT_TIMEOUT = 1.0
-
-
 class Command(Enum):
     """A command for the Plus Deck 2C PC Cassette Deck."""
 
@@ -119,10 +115,9 @@ class Receiver(asyncio.Queue[Event]):
     _client: "Client"
     _receiving: bool
 
-    def __init__(self: Self, client: "Client", timeout: float, maxsize=0) -> None:
+    def __init__(self: Self, client: "Client", maxsize=0) -> None:
         super().__init__(maxsize)
         self._client = client
-        self._default_timeout = timeout
         self._receiving = True
 
     async def get_state(self: Self, timeout: Optional[float] = None) -> State:
@@ -139,9 +134,7 @@ class Receiver(asyncio.Queue[Event]):
         Receive state changes until the expected state.
         """
 
-        to = timeout if timeout is not None else self._default_timeout
-
-        async with asyncio.timeout(to):
+        async with asyncio.timeout(timeout):
             current = await self.get_state()
 
             while current != state:
@@ -183,12 +176,10 @@ class Client(asyncio.Protocol):
 
     def __init__(
         self: Self,
-        timeout: float,
         loop: Optional[asyncio.AbstractEventLoop] = None,
     ):
         _loop = loop if loop else asyncio.get_running_loop()
 
-        self._default_timeout: float = timeout
         self.state: State = State.UNSUBSCRIBED
         self.events: AsyncIOEventEmitter = AsyncIOEventEmitter(_loop)
         self.loop: asyncio.AbstractEventLoop = _loop
@@ -419,8 +410,6 @@ class Client(asyncio.Protocol):
         and the Receiver interface will meet most use cases.
         """
 
-        to = timeout if timeout is not None else self._default_timeout
-
         fut = self.loop.create_future()
 
         @self.listens_once(state)
@@ -429,14 +418,14 @@ class Client(asyncio.Protocol):
 
         self.events.on("state", listener)
 
-        return asyncio.ensure_future(asyncio.wait_for(fut, timeout=to))
+        return asyncio.ensure_future(asyncio.wait_for(fut, timeout=timeout))
 
     async def subscribe(self: Self, maxsize: int = 0) -> Receiver:
         """
         Subscribe to state changes.
         """
 
-        rcv = Receiver(client=self, timeout=self._default_timeout, maxsize=maxsize)
+        rcv = Receiver(client=self, maxsize=maxsize)
         self._receivers.add(rcv)
 
         if self.state == State.UNSUBSCRIBED:
@@ -492,7 +481,6 @@ class Client(asyncio.Protocol):
 
 async def create_connection(
     port: str,
-    timeout: float = DEFAULT_TIMEOUT,
     loop: Optional[asyncio.AbstractEventLoop] = None,
 ) -> Client:
     """
@@ -503,7 +491,7 @@ async def create_connection(
 
     _, client = await create_serial_connection(
         _loop,
-        lambda: Client(timeout, _loop),
+        lambda: Client(_loop),
         port,
         baudrate=9600,
         bytesize=EIGHTBITS,
@@ -519,7 +507,6 @@ async def create_connection(
 @asynccontextmanager
 async def connection(
     port: str,
-    timeout: float = DEFAULT_TIMEOUT,
     loop: Optional[asyncio.AbstractEventLoop] = None,
 ) -> AsyncGenerator[Client, None]:
     """
@@ -529,7 +516,7 @@ async def connection(
     connection to close.
     """
 
-    client = await create_connection(port, timeout, loop=loop)
+    client = await create_connection(port, loop=loop)
 
     yield client
 

@@ -12,7 +12,7 @@ import plusdeck.config
 
 @pytest.fixture
 async def client():
-    client = Client(timeout=0.1)
+    client = Client()
     client._transport = Mock(name="client._transport")
     client.state = State.SUBSCRIBED
     return client

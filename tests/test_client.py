@@ -380,7 +380,7 @@ async def test_expect_timeout(client: Client) -> None:
     rcv = await asyncio.wait_for(client.subscribe(), timeout=TEST_TIMEOUT)
 
     with pytest.raises(TimeoutError):
-        await rcv.expect(State.EJECTED)
+        await rcv.expect(State.EJECTED, timeout=0.1)
 
 
 @pytest.mark.asyncio
