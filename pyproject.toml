@@ -12,6 +12,7 @@ description = "Serial client for Plus Deck 2C PC Cassette Drive"
 readme = "README.md"
 keywords = []
 license = { text = "MIT" }
+requires-python = ">=3.11"
 dependencies = [
   "appdirs",
   "click",
@@ -26,8 +27,7 @@ dependencies = [
 [project.scripts]
 plusdeck = "plusdeck.cli:main"
 
-
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
   "flake8",
   "flake8-black",
@@ -37,13 +37,15 @@ dev = [
   "isort",
   "jupyterlab",
   "mkdocs",
-  "mkdocs-bootstrap386",
   "mkdocstrings[python]",
   "rich",
   "tox",
   "twine",
   "validate-pyproject[all]",
 ]
+
+[tool.uv]
+package = true
 
 [tool.isort]
 profile = "appnexus"

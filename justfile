@@ -13,23 +13,19 @@ default:
 #
 
 _venv:
-  if [ ! -d venv ]; then python3 -m venv venv; . ./venv/bin/activate && pip install pip pip-tools wheel; fi
+  if [ ! -d .venv ]; then uv venv; fi
 
 _clean-venv:
-  rm -rf venv
+  rm -rf .venv
 
 # Install all dependencies
 install:
   @just _venv
-  @just compile
-  . ./venv/bin/activate && pip install -r requirements_dev.txt
-  . ./venv/bin/activate && pip install -e .
+  uv sync --dev
+  uv pip install -e .
 
 # Update all dependencies
 update:
-  @just _venv
-  . ./venv/bin/activate && pip install pip pip-tools wheel --upgrade
-  @just _clean-compile
   @just install
 
 # Update all dependencies and rebuild the environment
@@ -39,53 +35,56 @@ upgrade:
 _upgrade:
   @just _clean-venv
   @just _venv
-  @just _clean-compile
-  @just compile
   @just install
 
 # Generate locked requirements files based on dependencies in pyproject.toml
 compile:
-  . ./venv/bin/activate && python -m piptools compile --resolver=backtracking -o requirements.txt pyproject.toml
-  . ./venv/bin/activate && python -m piptools compile --resolver=backtracking --extra=dev -o requirements_dev.txt pyproject.toml
+  uv pip compile -o requirements.txt pyproject.toml
+  cp requirements.txt requirements_dev.txt
+  cat requirements_dev.txt.in >> requirements_dev.txt
 
 _clean-compile:
   rm -f requirements.txt
   rm -f requirements_dev.txt
 
 #
-# Development tooling - linting, formatting, etc
+# Running the CLI
 #
 
 # Run a command or script
 run *argv:
-  . ./venv/bin/activate && {{ argv }}
+  uv run {{ argv }}
 
-# Run crystalfontz cli
+# Run the plusdeck cli
 start *argv:
-  . ./venv/bin/activate && plusdeck {{ argv }}
+  uv run -- plusdeck {{ argv }}
+
+#
+# Development tooling - linting, formatting, etc
+#
 
 # Format with black and isort
 format:
-  . ./venv/bin/activate &&  black './plusdeck' ./tests
-  . ./venv/bin/activate &&  isort --settings-file . './plusdeck' ./tests
+  uv run black './plusdeck' ./tests
+  uv run isort --settings-file . './plusdeck' ./tests
 
 # Lint with flake8
 lint:
-  . ./venv/bin/activate && flake8 './plusdeck' ./tests
-  . ./venv/bin/activate && validate-pyproject ./pyproject.toml
+  uv run flake8 './plusdeck' ./tests
+  uv run validate-pyproject ./pyproject.toml
 
 # Check type annotations with pyright
 check:
-  . ./venv/bin/activate && npx pyright@latest
+  uv run npx pyright@latest
 
 # Run tests with pytest
 test:
-  . ./venv/bin/activate && pytest -vvv ./tests
+  uv run pytest -vvv ./tests
   @just _clean-test
 
 # Run integration tests (for what they are)
 integration:
-  . ./venv/bin/activate && python ./tests/integration.py
+  uv run python ./tests/integration.py
 
 _clean-test:
   rm -f pytest_runner-*.egg
@@ -93,7 +92,7 @@ _clean-test:
 
 # Run tests using tox
 tox:
-  . ./venv/bin/activate && tox
+  uv run tox
   @just _clean-tox
 
 _clean-tox:
@@ -104,10 +103,10 @@ _clean-tox:
 #
 
 shell:
-  . ./venv/bin/activate && bash
+  uv run bash
 
 jupyterlab:
-  . ./venv/bin/activate && jupyter lab
+  uv run jupyter lab
 
 #
 # Documentation
@@ -115,11 +114,15 @@ jupyterlab:
 
 # Live generate docs and host on a development webserver
 docs:
-  . ./venv/bin/activate && mkdocs serve
+  uv run mkdocs serve
 
 # Build the documentation
 build-docs:
-  . ./venv/bin/activate && mkdocs build
+  uv run mkdocs build
+
+#
+# Package publishing
+#
 
 #
 # Package publishing
@@ -127,21 +130,17 @@ build-docs:
 
 # Build the package
 build:
-  . ./venv/bin/activate && python -m build
+  uv build
 
 _clean-build:
   rm -rf dist
 
 # Tag the release in git
 tag:
-  . ./venv/bin/activate && git tag -a "$(python3 -c 'import toml; print(toml.load(open("pyproject.toml", "r"))["project"]["version"])')" -m "Release $(python3 -c 'import toml; print(toml.load(open("pyproject.toml", "r"))["project"]["version"])')"
+  uv run git tag -a "$(python3 -c 'import toml; print(toml.load(open("pyproject.toml", "r"))["project"]["version"])')" -m "Release $(python3 -c 'import toml; print(toml.load(open("pyproject.toml", "r"))["project"]["version"])')"
 
-# Upload built packages
-upload:
-  . ./venv/bin/activate && twine upload dist/*
-
-# Build the package and publish it to PyPI
-publish: build upload
+publish: build
+  uv publish
 
 # Clean up loose files
 clean: _clean-venv _clean-compile _clean-test _clean-tox
