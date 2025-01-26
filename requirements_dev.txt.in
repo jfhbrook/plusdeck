@@ -6,6 +6,7 @@ black
 isort
 jupyterlab
 mkdocs
+mkdocs-include-markdown-plugin
 mkdocstrings[python]
 rich
 tox

@@ -48,8 +48,6 @@ pyserial==3.5
     #   pyserial-asyncio
 pyserial-asyncio==0.6
     # via plusdeck (pyproject.toml)
-pyyaml==6.0.2
-    # via plusdeck (pyproject.toml)
 stack-data==0.6.3
     # via ipython
 traitlets==5.14.3
@@ -72,6 +70,7 @@ black
 isort
 jupyterlab
 mkdocs
+mkdocs-include-markdown-plugin
 mkdocstrings[python]
 rich
 tox
