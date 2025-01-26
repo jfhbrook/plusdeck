@@ -34,8 +34,7 @@ dependencies = [
   "ipywidgets",
   "pyee",
   "pyserial",
-  "pyserial-asyncio",
-  "pyyaml",
+  "pyserial-asyncio"
 ]
 
 [project.scripts]
