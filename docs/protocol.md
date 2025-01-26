@@ -51,7 +51,7 @@ Unlike commands, there are a few clear relationships between the bytes chosen. C
 
 In addition, play and pause commands are separated by 2. For example, playing side A is 10 (0x0A), while pausing side A is 12 (0x0C) = 10 + 2.
 
-The outlier is ready/subscribed, at 21 (0x15), right in between playing B (20) and paused B (22). I believe this event is an accident. My evidence for this is that there isn't a clear event for unsubscribing - instead, the device either emits 12 (0x0C) or 22 (0x16), (paused on A and paused on B respectively). This makes me think that some incidental aspect of the device's design causes it to emit these bytes, and that, while that behavior seems reliable, it's not intentional.
+The outlier is ready/subscribed, at 21 (0x15), right in between playing B (20) and paused B (22). I believe this event is an accident. My evidence for this is that there isn't a clear event for unsubscribing. Instead, the device either emits 12 (0x0C) or 22 (0x16), - paused on A and paused on B respectively. This makes me think that some incidental aspect of the device's design causes it to emit these bytes, and that, while that behavior seems reliable, it's not intentional.
 
 Something I haven't tried is seeing if plugging/unplugging headphones triggers
 any events. I don't expect them but it's worth checking.

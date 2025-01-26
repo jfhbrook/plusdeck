@@ -5,10 +5,6 @@
 This project contains a Python library for interacting with the Plus Deck 2c
 over serial, using `asyncio`.
 
-## API
-
-### ::: plusdeck
-
 ## Changelog
 
 {%
