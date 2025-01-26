@@ -432,7 +432,7 @@ async def subscribe(obj: Obj, client: Client, for_: Optional[float]) -> None:
                 if not running:
                     break
                 try:
-                    state = await rcv.get_state(timeout=obj.timeout)
+                    state = await rcv.get_state(timeout=1.0)
                     echo(state)
                 except TimeoutError:
                     pass
