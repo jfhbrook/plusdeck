@@ -1,4 +1,4 @@
-yyyy/mm/dd Version x.y.z
+2025/01/26 Version 2.0.0
 ------------------------
 - Multiple APIs support an optional `timeout` argument
   - `client.wait_for`
