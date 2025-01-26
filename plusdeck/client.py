@@ -134,11 +134,10 @@ class Receiver(asyncio.Queue[Event]):
         Receive state changes until the expected state.
         """
 
-        async with asyncio.timeout(timeout):
-            current = await self.get_state()
+        current = await self.get_state(timeout)
 
-            while current != state:
-                current = await self.get_state()
+        while current != state:
+            current = await self.get_state(timeout)
 
     async def __aiter__(self: Self) -> AsyncGenerator[State, None]:
         """Iterate over state change events."""
