@@ -17,12 +17,8 @@ def default_port() -> str:
     return comports(include_links=True)[0].device
 
 
-DEFAULT_TIMEOUT = 1.0
-
-
 @config(APP_NAME)
 class Config(BaseConfig):
     """A config for the Plus Deck 2C PC Cassette Deck."""
 
     port: str = field(default_factory=default_port, env_var="PORT")
-    timeout: float = field(default=DEFAULT_TIMEOUT, env_var="TIMEOUT")

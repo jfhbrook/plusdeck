@@ -120,20 +120,24 @@ class Receiver(asyncio.Queue[Event]):
         self._client = client
         self._receiving = True
 
-    async def get_state(self: Self) -> State:
-        exc, state = await super().get()
-        if exc:
-            raise exc
-        else:
-            assert state, "State must be defined"
-            return state
+    async def get_state(self: Self, timeout: Optional[float] = None) -> State:
+        async with asyncio.timeout(timeout):
+            exc, state = await super().get()
+            if exc:
+                raise exc
+            else:
+                assert state, "State must be defined"
+                return state
 
-    async def expect(self: Self, state: State) -> None:
-        """Receive state changes until the expected state."""
-        current = await self.get_state()
+    async def expect(self: Self, state: State, timeout: Optional[float] = None) -> None:
+        """
+        Receive state changes until the expected state.
+        """
+
+        current = await self.get_state(timeout)
 
         while current != state:
-            current = await self.get()
+            current = await self.get_state(timeout)
 
     async def __aiter__(self: Self) -> AsyncGenerator[State, None]:
         """Iterate over state change events."""
@@ -398,7 +402,7 @@ class Client(asyncio.Protocol):
         return decorator
 
     def wait_for(
-        self: Self, state: State, timeout: Optional[int | float] = None
+        self: Self, state: State, timeout: Optional[float] = None
     ) -> asyncio.Future[None]:
         """
         Wait for a given state to emit. This is a low level method - client.subscribe

@@ -36,7 +36,6 @@ class Obj:
     global_: bool
     port: str
     output: OutputMode
-    timeout: Optional[float]
 
 
 LogLevel = (
@@ -131,10 +130,6 @@ def pass_client(run_forever: bool = False) -> AsyncCommandDecorator:
         def wrapped(obj: Obj, *args, **kwargs) -> None:
             port: str = obj.port
             output = obj.output
-            timeout = obj.timeout
-
-            if run_forever:
-                timeout = None
 
             # Set the output mode for echo
             echo.mode = output
@@ -147,12 +142,7 @@ def pass_client(run_forever: bool = False) -> AsyncCommandDecorator:
                     sys.exit(1)
 
                 # Giddyup!
-                try:
-                    async with asyncio.timeout(timeout):
-                        await fn(client, *args, **kwargs)
-                except TimeoutError:
-                    echo(f"Command timed out after {timeout} seconds.")
-                    sys.exit(1)
+                await fn(client, *args, **kwargs)
 
                 # Close the client if we're done
                 if not run_forever:
@@ -198,12 +188,6 @@ def pass_client(run_forever: bool = False) -> AsyncCommandDecorator:
     default="text",
     help="Output either human-friendly text or JSON",
 )
-@click.option(
-    "--timeout",
-    type=float,
-    envvar="PLUSDECK_TIMEOUT",
-    help="How long to wait for a response from the device before timing out",
-)
 @click.pass_context
 def main(
     ctx: click.Context,
@@ -212,7 +196,6 @@ def main(
     log_level: LogLevel,
     port: Optional[str],
     output: Optional[OutputMode],
-    timeout: Optional[float],
 ) -> None:
     """
     Control your Plus Deck 2C tape deck.
@@ -233,7 +216,6 @@ def main(
         global_=global_,
         port=port or config.port,
         output=output or "text",
-        timeout=timeout or config.timeout,
     )
 
     logging.basicConfig(level=getattr(logging, log_level))
@@ -415,23 +397,53 @@ async def eject(client: Client) -> None:
 
 @main.command
 @click.argument("state", type=STATE)
+@click.option(
+    "--timeout",
+    type=float,
+    help="How long to wait for a state change from the Plus Deck 2C before timing out",
+)
 @pass_client()
-async def expect(client: Client, state: State) -> None:
+async def expect(client: Client, state: State, timeout: Optional[float]) -> None:
     """
     Wait for an expected state
     """
 
     async with client.session() as rcv:
-        await rcv.expect(state)
+        try:
+            await rcv.expect(state, timeout=timeout)
+        except TimeoutError:
+            logger.info(f"Timed out after {timeout} seconds.")
 
 
 @main.command
+@click.option("--for", "for_", type=float, help="Amount of time to listen for reports")
 @pass_client(run_forever=True)
-async def subscribe(client: Client) -> None:
+@click.pass_obj
+async def subscribe(obj: Obj, client: Client, for_: Optional[float]) -> None:
     """
     Subscribe to state changes
     """
 
-    async with client.session() as rcv:
-        async for state in rcv:
-            echo(state)
+    running = True
+
+    async def subscribe() -> None:
+        async with client.session() as rcv:
+            while True:
+                if not running:
+                    break
+                try:
+                    state = await rcv.get_state(timeout=1.0)
+                    echo(state)
+                except TimeoutError:
+                    pass
+
+    subscription = client.loop.create_task(subscribe())
+
+    if for_ is not None:
+        await asyncio.sleep(for_)
+        running = False
+        await subscription
+        client.close()
+        await client.closed
+    else:
+        await subscription
