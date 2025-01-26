@@ -1,6 +1,8 @@
 from configurence import BaseConfig, config, field, global_file
 from serial.tools.list_ports import comports
 
+from plusdeck.client import DEFAULT_TIMEOUT
+
 """
 Configuration management for the Plus Deck 2C PC Cassette Deck. The client
 doesn't use this directly, but it's useful when writing applications and
@@ -15,9 +17,6 @@ def default_port() -> str:
     """Get a default serial port."""
 
     return comports(include_links=True)[0].device
-
-
-DEFAULT_TIMEOUT = 1.0
 
 
 @config(APP_NAME)

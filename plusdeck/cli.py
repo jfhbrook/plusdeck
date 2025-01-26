@@ -36,7 +36,7 @@ class Obj:
     global_: bool
     port: str
     output: OutputMode
-    timeout: Optional[float]
+    timeout: float
 
 
 LogLevel = (
@@ -131,25 +131,21 @@ def pass_client(run_forever: bool = False) -> AsyncCommandDecorator:
         def wrapped(obj: Obj, *args, **kwargs) -> None:
             port: str = obj.port
             output = obj.output
-            timeout = obj.timeout
-
-            if run_forever:
-                timeout = None
+            timeout: float = obj.timeout
 
             # Set the output mode for echo
             echo.mode = output
 
             async def main() -> None:
                 try:
-                    client: Client = await create_connection(port)
+                    client: Client = await create_connection(port, timeout=timeout)
                 except SerialException as exc:
                     click.echo(exc)
                     sys.exit(1)
 
                 # Giddyup!
                 try:
-                    async with asyncio.timeout(timeout):
-                        await fn(client, *args, **kwargs)
+                    await fn(client, *args, **kwargs)
                 except TimeoutError:
                     echo(f"Command timed out after {timeout} seconds.")
                     sys.exit(1)
@@ -202,7 +198,7 @@ def pass_client(run_forever: bool = False) -> AsyncCommandDecorator:
     "--timeout",
     type=float,
     envvar="PLUSDECK_TIMEOUT",
-    help="How long to wait for a response from the device before timing out",
+    help="How long to wait for a state change from the Plus Deck 2C before timing out",
 )
 @click.pass_context
 def main(
@@ -426,12 +422,29 @@ async def expect(client: Client, state: State) -> None:
 
 
 @main.command
+@click.option("--for", "for_", type=float, help="Amount of time to listen for reports")
 @pass_client(run_forever=True)
-async def subscribe(client: Client) -> None:
+async def subscribe(client: Client, for_: Optional[float]) -> None:
     """
     Subscribe to state changes
     """
 
-    async with client.session() as rcv:
-        async for state in rcv:
-            echo(state)
+    running = True
+
+    async def subscribe() -> None:
+        async with client.session() as rcv:
+            async for state in rcv:
+                if not running:
+                    break
+                echo(state)
+
+    subscription = client.loop.create_task(subscribe())
+
+    if for_ is not None:
+        await asyncio.sleep(for_)
+        running = False
+        await subscription
+        client.close()
+        await client.closed
+    else:
+        await subscription
