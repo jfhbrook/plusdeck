@@ -1,3 +1,3 @@
-yyyy/mm/dd Version x.y.z
+2025/01/26 Version 1.0.0
 ------------------------
-- TK
+- Initial release
