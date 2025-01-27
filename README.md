@@ -156,7 +156,7 @@ This library has somewhat comprehensive unit test coverage through `pytest`. Add
 
 ## Documentation
 
-Other documentation is in [./docs](./docs).
+For more documentation, refer to [the ReadTheDocs documentation](https://plusdeck.readthedocs.io/en/latest/).
 
 ## Changelog
 
