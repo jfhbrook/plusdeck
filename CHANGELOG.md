@@ -1,3 +1,5 @@
+- Remove `appdirs` dependency
+
 2025/01/26 Version 2.0.0
 ------------------------
 - Multiple APIs support an optional `timeout` argument
