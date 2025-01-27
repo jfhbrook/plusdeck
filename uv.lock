@@ -1426,6 +1426,11 @@ dependencies = [
     { name = "pyserial-asyncio" },
 ]
 
+[package.optional-dependencies]
+dbus = [
+    { name = "sdbus" },
+]
+
 [package.dev-dependencies]
 dev = [
     { name = "black" },
@@ -1452,6 +1457,7 @@ requires-dist = [
     { name = "pyee" },
     { name = "pyserial" },
     { name = "pyserial-asyncio" },
+    { name = "sdbus", marker = "extra == 'dbus'" },
 ]
 
 [package.metadata.requires-dev]
@@ -1963,6 +1969,16 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/30/89/35fc7a6cdf3477d441c7aca5e9bbf5a14e0f25152aed7f63f4e0b141045d/rpds_py-0.22.3-cp313-cp313t-musllinux_1_2_x86_64.whl", hash = "sha256:a76e42402542b1fae59798fab64432b2d015ab9d0c8c47ba7addddbaf7952333", size = 553855 },
     { url = "https://files.pythonhosted.org/packages/8f/e0/830c02b2457c4bd20a8c5bb394d31d81f57fbefce2dbdd2e31feff4f7003/rpds_py-0.22.3-cp313-cp313t-win32.whl", hash = "sha256:69803198097467ee7282750acb507fba35ca22cc3b85f16cf45fb01cb9097730", size = 219100 },
     { url = "https://files.pythonhosted.org/packages/f8/30/7ac943f69855c2db77407ae363484b915d861702dbba1aa82d68d57f42be/rpds_py-0.22.3-cp313-cp313t-win_amd64.whl", hash = "sha256:f5cf2a0c2bdadf3791b5c205d55a37a54025c6e18a71c71f82bb536cf9a454bf", size = 233794 },
+]
+
+[[package]]
+name = "sdbus"
+version = "0.13.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/4f/c7/8740ff78e9ffdbb9a28e7722e145795015c62ea7ce812242f5968073511c/sdbus-0.13.0.tar.gz", hash = "sha256:801bd46608ee82614d42960c8ba8ae9300edb1bf5bbeb534bc8fd21f13d2c20e", size = 85887 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/85/fb/060bc3ffdbfae6062800ee516b68c5a050e5c4cb9424759a7650462a9f5b/sdbus-0.13.0-cp37-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:fcc88e70e76723234fd0987edccbcc3fe5f4e99245eb30a6b362ef7f882fd8a3", size = 540599 },
+    { url = "https://files.pythonhosted.org/packages/57/33/5d6d93d2897901cf503ed6db47b10208195fedaa0ed4e9f7c9f511fc649c/sdbus-0.13.0-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:199a4c321fc5b4cded57a110f82625f6541909c40e733f574d12afc5ace149a7", size = 539172 },
 ]
 
 [[package]]

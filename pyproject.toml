@@ -33,7 +33,12 @@ dependencies = [
   "ipywidgets",
   "pyee",
   "pyserial",
-  "pyserial-asyncio"
+  "pyserial-asyncio",
+]
+
+[project.optional-dependencies]
+dbus = [
+  "sdbus",
 ]
 
 [project.scripts]
