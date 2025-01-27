@@ -43,7 +43,7 @@ dbus = [
 
 [project.scripts]
 plusdeck = "plusdeck.cli:main"
-plusdeckd = "plusdeck.dbus.server:main"
+plusdeckd = "plusdeck.dbus.service:main"
 
 [dependency-groups]
 dev = [

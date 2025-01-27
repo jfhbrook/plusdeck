@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, Optional, Type
+from typing import Any, Optional
 
 try:
     from typing import Self
@@ -11,32 +11,13 @@ try:
         dbus_method_async,
         dbus_signal_async,
         DbusInterfaceCommonAsync,
-        request_default_bus_name_async,
     )
 except ImportError:
-
-    def dbus_method_async(*args, **kwargs) -> Any:
-        def decorator(f: Any) -> Any:
-            return f
-
-        return decorator
-
-    def dbus_signal_async(*args, **kwargs) -> Any:
-        def decorator(f: Any) -> Any:
-            return f
-
-        return decorator
-
-    class DbusInterfaceCommonAsync:
-        def __init_subclass__(cls: Type[Self], *args, **kwargs) -> None:
-            pass
-
-        def export_to_dbus(self: Self, path: str) -> None:
-            pass
-
-    async def request_default_bus_name_async(bus_name: str) -> None:
-        pass
-
+    from plusdeck.dbus.shims import (
+        dbus_method_async,
+        dbus_signal_async,
+        DbusInterfaceCommonAsync,
+    )
 
 from plusdeck.client import Client, create_connection, Receiver, State
 from plusdeck.config import Config
@@ -55,6 +36,7 @@ async def load_client() -> Client:
 class PlusdeckInterface(  # type: ignore
     DbusInterfaceCommonAsync, interface_name=DBUS_NAME  # type: ignore
 ):
+
     def __init__(self: Self, client: Client) -> None:
         super().__init__()
         self._client: Client = client
@@ -92,6 +74,17 @@ class PlusdeckInterface(  # type: ignore
         await self._subscription
         client.close()
         await client.closed
+
+    async def _closed(self: Self) -> None:
+        # Shenanigans to allow for a refresh that replaces the client
+        client = self.client
+        while not client.closed.done():
+            await client.closed
+            client = self.client
+
+    @property
+    def closed(self: Self) -> asyncio.Future:
+        return asyncio.ensure_future(self._closed())
 
     @dbus_method_async()
     async def reload(self: Self) -> None:
@@ -174,21 +167,3 @@ class PlusdeckInterface(  # type: ignore
     @dbus_signal_async("s")
     def state(self: Self) -> str:
         raise NotImplementedError("state")
-
-
-async def server() -> None:
-    client = await load_client()
-
-    iface = PlusdeckInterface(client)
-
-    await request_default_bus_name_async(DBUS_NAME)
-    iface.export_to_dbus("/")
-
-    await client.closed
-
-
-def main() -> None:
-    # Assert the import works
-    import sdbus  # noqa: F401 # type: ignore
-
-    asyncio.run(server())
