@@ -171,6 +171,14 @@ class DbusInterface(  # type: ignore
 
         self.client.eject()
 
+    @dbus_method_async("sf")
+    async def expect(self: Self, state: str, timeout: float) -> None:
+        st = State[state]
+        # TODO: Implement me
+        raise NotImplementedError("expect")
+
     @dbus_signal_async("s")
-    def state(self: Self) -> str:
+    async def state(self: Self, state: str) -> str:
+        st = State[state]
+        # TODO: Implement me
         raise NotImplementedError("state")
