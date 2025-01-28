@@ -9,12 +9,14 @@ except ImportError:
 try:
     from sdbus import (  # type: ignore
         dbus_method_async,
+        dbus_property_async,
         dbus_signal_async,
         DbusInterfaceCommonAsync,
     )
 except ImportError:
     from plusdeck.dbus.shims import (
         dbus_method_async,
+        dbus_property_async,
         dbus_signal_async,
         DbusInterfaceCommonAsync,
     )
@@ -44,6 +46,10 @@ class DbusInterface(  # type: ignore
         self._client_lock: asyncio.Lock = asyncio.Lock()
         self._rcv: Optional[Receiver] = None
         self.subscribe()
+
+    @dbus_property_async("s")
+    def config_file(self: Self) -> str:
+        return self._config_file
 
     def subscribe(self: Self) -> None:
         self._subscription = asyncio.create_task(self.subscription())

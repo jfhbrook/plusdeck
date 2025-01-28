@@ -6,6 +6,17 @@ except ImportError:
     Self = Any
 
 
+class Property:
+    def __init__(self: Self, fn: Any) -> None:
+        self._fn = fn
+
+    async def get_async(self: Self) -> Any:
+        return self._fn()
+
+    async def set_async(self: Self, value: Any) -> None:
+        raise NotImplementedError("set_async")
+
+
 class Signal:
     def emit(self: Self, obj: Any) -> None:
         pass
@@ -14,6 +25,13 @@ class Signal:
 def dbus_method_async(*args, **kwargs) -> Any:
     def decorator(f: Any) -> Any:
         return f
+
+    return decorator
+
+
+def dbus_property_async(*args, **kwargs) -> Any:
+    def decorator(fn: Any) -> Property:
+        return Property(fn)
 
     return decorator
 
