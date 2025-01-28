@@ -50,6 +50,9 @@ class DbusInterfaceCommonAsync:
     def export_to_dbus(self: Self, path: str) -> None:
         pass
 
+    def _proxyify(self: Self, name: str, path: str) -> None:
+        pass
+
 
 async def request_default_bus_name_async(bus_name: str) -> None:
     pass
