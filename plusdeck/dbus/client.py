@@ -18,12 +18,12 @@ from plusdeck.cli.obj import Obj
 from plusdeck.cli.output import echo, OutputMode
 from plusdeck.cli.types import STATE
 from plusdeck.client import State
-from plusdeck.dbus.interface import DBUS_NAME, PlusdeckInterface
+from plusdeck.dbus.interface import DBUS_NAME, DbusInterface
 
 logger = logging.getLogger(__name__)
 
 
-class DbusClient(PlusdeckInterface):
+class DbusClient(DbusInterface):
     """
     Plus Deck 2C dbus client.
     """

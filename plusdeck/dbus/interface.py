@@ -34,8 +34,7 @@ async def load_client() -> Client:
     return client
 
 
-# TODO: Rename to DbusInterface
-class PlusdeckInterface(  # type: ignore
+class DbusInterface(  # type: ignore
     DbusInterfaceCommonAsync, interface_name=DBUS_NAME  # type: ignore
 ):
 

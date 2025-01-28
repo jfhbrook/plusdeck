@@ -5,12 +5,12 @@ try:
 except ImportError:
     from plusdeck.dbus.shims import request_default_bus_name_async
 
-from plusdeck.dbus.interface import DBUS_NAME, load_client, PlusdeckInterface
+from plusdeck.dbus.interface import DBUS_NAME, load_client, DbusInterface
 
 
-async def service() -> PlusdeckInterface:
+async def service() -> DbusInterface:
     client = await load_client()
-    iface = PlusdeckInterface(client)
+    iface = DbusInterface(client)
 
     await request_default_bus_name_async(DBUS_NAME)
     iface.export_to_dbus("/")
