@@ -24,6 +24,7 @@ async def serve() -> None:
     await srv.closed
 
 
+# TODO: click entry point with a --global flag
 def main() -> None:
     # Assert the import works
     import sdbus  # noqa: F401 # type: ignore

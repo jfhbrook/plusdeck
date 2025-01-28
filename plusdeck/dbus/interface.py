@@ -25,6 +25,7 @@ from plusdeck.config import Config
 DBUS_NAME = "org.jfhbrook.plusdeck"
 
 
+# TODO: 'global' flag
 async def load_client() -> Client:
     config: Config = Config.from_file(load_environment=True)
 
@@ -33,6 +34,7 @@ async def load_client() -> Client:
     return client
 
 
+# TODO: Rename to DbusInterface
 class PlusdeckInterface(  # type: ignore
     DbusInterfaceCommonAsync, interface_name=DBUS_NAME  # type: ignore
 ):

@@ -12,10 +12,10 @@ except ImportError:
 
 import click
 
-from plusdeck.cli.base import main_group
 from plusdeck.cli.client import AsyncCommand, WrappedAsyncCommand
+from plusdeck.cli.logger import LogLevel
 from plusdeck.cli.obj import Obj
-from plusdeck.cli.output import echo
+from plusdeck.cli.output import echo, OutputMode
 from plusdeck.cli.types import STATE
 from plusdeck.client import State
 from plusdeck.dbus.interface import DBUS_NAME, PlusdeckInterface
@@ -61,8 +61,53 @@ def pass_client(fn: AsyncCommand) -> WrappedAsyncCommand:
     return wrapped
 
 
-# TODO: Define this bespoke - many options don't apply
-main = main_group()
+@click.group()
+@click.option(
+    "--log-level",
+    envvar="PLUSDECK_LOG_LEVEL",
+    type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]),
+    default="INFO",
+    help="Set the log level",
+)
+@click.option(
+    "--output",
+    type=click.Choice(["text", "json"]),
+    default="text",
+    help="Output either human-friendly text or JSON",
+)
+@click.pass_context
+def main(
+    ctx: click.Context,
+    global_: bool,
+    config_file: Optional[str],
+    log_level: LogLevel,
+    port: Optional[str],
+    output: Optional[OutputMode],
+) -> None:
+    """
+    Control your Plus Deck 2C Cassette Drive through dbus.
+    """
+
+    logging.basicConfig(level=getattr(logging, log_level))
+
+    raise NotImplementedError("main")
+
+    # TODO: We don't actually need/want obj. Instead, we want to:
+    #
+    # 1. Set up the client
+    # 2. Get the config file path from the dbus client
+    # 3. Load the config based on that file path
+    #
+    # This implies that we want a separate Obj implementation with a client
+    # and a config attached to it.
+
+    config: Config = Config.from_file(file=file)
+    ctx.obj = Obj(
+        config=config,
+        global_=global_,
+        port=port or config.port,
+        output=output or "text",
+    )
 
 
 @main.group()
