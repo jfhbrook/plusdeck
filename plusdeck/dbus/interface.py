@@ -25,9 +25,8 @@ from plusdeck.config import Config
 DBUS_NAME = "org.jfhbrook.plusdeck"
 
 
-# TODO: 'global' flag
-async def load_client() -> Client:
-    config: Config = Config.from_file(load_environment=True)
+async def load_client(config_file: str) -> Client:
+    config: Config = Config.from_file(config_file)
 
     client = await create_connection(config.port)
 
@@ -38,8 +37,9 @@ class DbusInterface(  # type: ignore
     DbusInterfaceCommonAsync, interface_name=DBUS_NAME  # type: ignore
 ):
 
-    def __init__(self: Self, client: Client) -> None:
+    def __init__(self: Self, config_file: str, client: Client) -> None:
         super().__init__()
+        self._config_file = config_file
         self._client: Client = client
         self._client_lock: asyncio.Lock = asyncio.Lock()
         self._rcv: Optional[Receiver] = None
@@ -91,7 +91,7 @@ class DbusInterface(  # type: ignore
     async def reload(self: Self) -> None:
         async with self._client_lock:
             await self._close(reloading=True)
-            self.client = await load_client()
+            self.client = await load_client(self._config_file)
             self.subscribe()
 
     @dbus_method_async()

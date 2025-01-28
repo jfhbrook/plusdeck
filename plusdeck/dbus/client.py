@@ -30,7 +30,7 @@ class DbusClient(DbusInterface):
 
     def __init__(self: Self) -> None:
         client = Mock(name="client", side_effect=NotImplementedError("client"))
-        super().__init__(client)
+        super().__init__("", client)
         self._proxify(DBUS_NAME, "/")
 
 
