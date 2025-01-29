@@ -415,8 +415,6 @@ class Client(asyncio.Protocol):
         def listener() -> None:
             fut.set_result(None)
 
-        self.events.on("state", listener)
-
         return asyncio.ensure_future(asyncio.wait_for(fut, timeout=timeout))
 
     async def subscribe(self: Self, maxsize: int = 0) -> Receiver:
