@@ -2,7 +2,6 @@ import asyncio
 from collections.abc import AsyncIterable
 from dataclasses import dataclass
 import functools
-import inspect
 import logging
 import sys
 from typing import cast, Optional, Self
@@ -10,14 +9,7 @@ from unittest.mock import Mock
 
 import click
 
-from plusdeck.cli import (
-    AsyncCommand,
-    echo,
-    LogLevel,
-    OutputMode,
-    STATE,
-    WrappedAsyncCommand,
-)
+from plusdeck.cli import async_command, AsyncCommand, echo, LogLevel, OutputMode, STATE
 from plusdeck.client import State
 from plusdeck.config import Config
 from plusdeck.dbus.interface import DBUS_NAME, DbusInterface
@@ -39,8 +31,8 @@ class DbusClient(DbusInterface):
 @dataclass
 class Obj:
     """
-    The main click context object. Contains options collated from parameters and the
-    loaded config file.
+    The main click context object. Includes a dbus client and the ability to load
+    the service's active config file.
     """
 
     client: DbusClient
@@ -49,34 +41,25 @@ class Obj:
 
     async def config(self: Self) -> Config:
         if not self._config:
-            config_file = await self.client.config_file
+            config_file: str = await self.client.config_file
+            config: Config = Config.from_file(config_file)
+            self._config = config
+            return config
+        else:
+            return self._config
 
-            self._config = Config.from_file(config_file)
 
-        return self._config
-
-
-def async_command(fn: AsyncCommand) -> WrappedAsyncCommand:
-    """
-    Create a dbus client and pass it to the decorated click handler.
-    """
-
+def pass_config(fn: AsyncCommand) -> AsyncCommand:
     @click.pass_obj
     @functools.wraps(fn)
-    def wrapped(obj: Obj, *args, **kwargs) -> None:
-        async def main() -> None:
-            # Giddyup!
-            await fn(obj.client, *args, **kwargs)
-
-        try:
-            asyncio.run(main())
-        except KeyboardInterrupt:
-            pass
+    async def wrapped(obj: Obj, *args, **kwargs) -> None:
+        config = await obj.config()
+        await fn(config, *args, **kwargs)
 
     return wrapped
 
 
-def pass_config(fn: AsyncCommand) -> WrappedAsyncCommand:
+def pass_client(fn: AsyncCommand) -> AsyncCommand:
     """
     Create a dbus client and pass it to the decorated click handler.
     """
@@ -84,21 +67,7 @@ def pass_config(fn: AsyncCommand) -> WrappedAsyncCommand:
     @click.pass_obj
     @functools.wraps(fn)
     async def wrapped(obj: Obj, *args, **kwargs) -> None:
-        config = await obj.config()
-        return fn(config, *args, **kwargs)
-
-    return wrapped
-
-
-def pass_client(fn: AsyncCommand) -> WrappedAsyncCommand:
-    """
-    Create a dbus client and pass it to the decorated click handler.
-    """
-
-    @click.pass_obj
-    @functools.wraps(fn)
-    def wrapped(obj: Obj, *args, **kwargs) -> None:
-        return fn(obj.client, *args, **kwargs)
+        return await fn(obj.client, *args, **kwargs)
 
     return wrapped
 
@@ -147,8 +116,9 @@ def config() -> None:
 
 @config.command()
 @click.argument("name")
-@click.pass_config
-def get(config: Config, name: str) -> None:
+@async_command
+@pass_config
+async def get(config: Config, name: str) -> None:
     """
     Get a parameter from the configuration file.
     """
@@ -161,8 +131,9 @@ def get(config: Config, name: str) -> None:
 
 
 @config.command()
-@click.pass_config
-def show(config: Config) -> None:
+@async_command
+@pass_config
+async def show(config: Config) -> None:
     """
     Show the current configuration.
     """
@@ -172,9 +143,9 @@ def show(config: Config) -> None:
 @config.command()
 @click.argument("name")
 @click.argument("value")
+@async_command
 @pass_config
 @pass_client
-@async_command
 async def set(config: Config, client: DbusClient, name: str, value: str) -> None:
     """
     Set a parameter in the configuration file.
@@ -192,18 +163,19 @@ async def set(config: Config, client: DbusClient, name: str, value: str) -> None
 
 @config.command()
 @click.argument("name")
+@async_command
+@pass_config
 @pass_client
-@click.pass_obj
-async def unset(obj: Obj, client: DbusClient, name: str) -> None:
+async def unset(config: Config, client: DbusClient, name: str) -> None:
     """
     Unset a parameter in the configuration file.
     """
     try:
-        obj.config.unset(name)
+        config.unset(name)
     except ValueError as exc:
         echo(str(exc))
         sys.exit(1)
-    obj.config.to_file()
+    config.to_file()
 
     await client.reload()
 
@@ -216,6 +188,7 @@ def play() -> None:
 
 
 @play.command(name="a")
+@async_command
 @pass_client
 async def play_a(client: DbusClient) -> None:
     """
@@ -226,6 +199,7 @@ async def play_a(client: DbusClient) -> None:
 
 
 @play.command(name="b")
+@async_command
 @pass_client
 async def play_b(client: DbusClient) -> None:
     """
@@ -243,6 +217,7 @@ def fast_forward() -> None:
 
 
 @fast_forward.command(name="a")
+@async_command
 @pass_client
 async def fast_forward_a(client: DbusClient) -> None:
     """
@@ -253,6 +228,7 @@ async def fast_forward_a(client: DbusClient) -> None:
 
 
 @fast_forward.command(name="b")
+@async_command
 @pass_client
 async def fast_forward_b(client: DbusClient) -> None:
     """
@@ -270,6 +246,7 @@ def rewind() -> None:
 
 
 @rewind.command(name="a")
+@async_command
 @pass_client
 async def rewind_a(client: DbusClient) -> None:
     """
@@ -280,6 +257,7 @@ async def rewind_a(client: DbusClient) -> None:
 
 
 @rewind.command(name="b")
+@async_command
 @pass_client
 async def rewind_b(client: DbusClient) -> None:
     """
@@ -290,6 +268,7 @@ async def rewind_b(client: DbusClient) -> None:
 
 
 @main.command
+@async_command
 @pass_client
 async def pause(client: DbusClient) -> None:
     """
@@ -300,6 +279,7 @@ async def pause(client: DbusClient) -> None:
 
 
 @main.command
+@async_command
 @pass_client
 async def stop(client: DbusClient) -> None:
     """
@@ -310,6 +290,7 @@ async def stop(client: DbusClient) -> None:
 
 
 @main.command
+@async_command
 @pass_client
 async def eject(client: DbusClient) -> None:
     """
@@ -326,6 +307,7 @@ async def eject(client: DbusClient) -> None:
     type=float,
     help="How long to wait for a state change from the Plus Deck 2C before timing out",
 )
+@async_command
 @pass_client
 async def wait_for(client: DbusClient, state: State, timeout: Optional[float]) -> None:
     """
@@ -337,9 +319,9 @@ async def wait_for(client: DbusClient, state: State, timeout: Optional[float]) -
 
 @main.command
 @click.option("--for", "for_", type=float, help="Amount of time to listen for reports")
+@async_command
 @pass_client
-@click.pass_obj
-async def subscribe(obj: Obj, client: DbusClient, for_: Optional[float]) -> None:
+async def subscribe(client: DbusClient, for_: Optional[float]) -> None:
     """
     Subscribe to state changes
     """
