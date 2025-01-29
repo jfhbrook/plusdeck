@@ -1,10 +1,5 @@
 from collections.abc import AsyncIterator
-from typing import Any, Callable, Type
-
-try:
-    from typing import Self
-except ImportError:
-    Self = Any
+from typing import Any, Callable, Self, Type
 
 
 class Property:

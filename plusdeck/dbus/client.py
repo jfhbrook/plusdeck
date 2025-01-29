@@ -5,13 +5,8 @@ import functools
 import inspect
 import logging
 import sys
-from typing import Any, cast, Optional
+from typing import cast, Optional, Self
 from unittest.mock import Mock
-
-try:
-    from typing import Self
-except ImportError:
-    Self = Any
 
 import click
 

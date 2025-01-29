@@ -6,13 +6,8 @@ import json
 import logging
 import os
 import sys
-from typing import Any, Callable, Coroutine, List, Literal, Optional
+from typing import Any, Callable, Coroutine, List, Literal, Optional, Self
 import warnings
-
-try:
-    from typing import Self
-except ImportError:
-    Self = Any
 
 import click
 from serial.serialutil import SerialException

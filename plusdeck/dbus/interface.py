@@ -1,10 +1,5 @@
 import asyncio
-from typing import Any, Optional
-
-try:
-    from typing import Self
-except ImportError:
-    Self = Any
+from typing import Optional, Self
 
 try:
     from sdbus import (  # type: ignore

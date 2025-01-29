@@ -4,12 +4,7 @@ import asyncio
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from enum import Enum
-from typing import Any, Callable, List, Optional, Set, Tuple, Type
-
-try:
-    from typing import Self
-except ImportError:
-    Self = Any
+from typing import Callable, List, Optional, Self, Set, Tuple, Type
 
 from pyee.asyncio import AsyncIOEventEmitter
 from serial import EIGHTBITS, PARITY_NONE, STOPBITS_ONE
