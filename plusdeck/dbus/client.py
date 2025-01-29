@@ -1,6 +1,8 @@
 import asyncio
 from collections.abc import AsyncIterable
+from dataclasses import dataclass
 import functools
+import inspect
 import logging
 import sys
 from typing import Any, cast, Optional
@@ -15,10 +17,10 @@ import click
 
 from plusdeck.cli.client import AsyncCommand, WrappedAsyncCommand
 from plusdeck.cli.logger import LogLevel
-from plusdeck.cli.obj import Obj
 from plusdeck.cli.output import echo, OutputMode
 from plusdeck.cli.types import STATE
 from plusdeck.client import State
+from plusdeck.config import Config
 from plusdeck.dbus.interface import DBUS_NAME, DbusInterface
 
 logger = logging.getLogger(__name__)
@@ -35,6 +37,60 @@ class DbusClient(DbusInterface):
         self._proxify(DBUS_NAME, "/")
 
 
+@dataclass
+class Obj:
+    """
+    The main click context object. Contains options collated from parameters and the
+    loaded config file.
+    """
+
+    client: DbusClient
+    output: OutputMode
+    _config: Optional[Config] = None
+
+    async def config(self: Self) -> Config:
+        if not self._config:
+            config_file = await self.client.config_file
+
+            self._config = Config.from_file(config_file)
+
+        return self._config
+
+
+def async_command(fn: AsyncCommand) -> WrappedAsyncCommand:
+    """
+    Create a dbus client and pass it to the decorated click handler.
+    """
+
+    @click.pass_obj
+    @functools.wraps(fn)
+    def wrapped(obj: Obj, *args, **kwargs) -> None:
+        async def main() -> None:
+            # Giddyup!
+            await fn(obj.client, *args, **kwargs)
+
+        try:
+            asyncio.run(main())
+        except KeyboardInterrupt:
+            pass
+
+    return wrapped
+
+
+def pass_config(fn: AsyncCommand) -> WrappedAsyncCommand:
+    """
+    Create a dbus client and pass it to the decorated click handler.
+    """
+
+    @click.pass_obj
+    @functools.wraps(fn)
+    async def wrapped(obj: Obj, *args, **kwargs) -> None:
+        config = await obj.config()
+        return fn(config, *args, **kwargs)
+
+    return wrapped
+
+
 def pass_client(fn: AsyncCommand) -> WrappedAsyncCommand:
     """
     Create a dbus client and pass it to the decorated click handler.
@@ -43,21 +99,7 @@ def pass_client(fn: AsyncCommand) -> WrappedAsyncCommand:
     @click.pass_obj
     @functools.wraps(fn)
     def wrapped(obj: Obj, *args, **kwargs) -> None:
-        output = obj.output
-
-        # Set the output mode for echo
-        echo.mode = output
-
-        async def main() -> None:
-            client: DbusClient = DbusClient()
-
-            # Giddyup!
-            await fn(client, *args, **kwargs)
-
-        try:
-            asyncio.run(main())
-        except KeyboardInterrupt:
-            pass
+        return fn(obj.client, *args, **kwargs)
 
     return wrapped
 
@@ -79,11 +121,8 @@ def pass_client(fn: AsyncCommand) -> WrappedAsyncCommand:
 @click.pass_context
 def main(
     ctx: click.Context,
-    global_: bool,
-    config_file: Optional[str],
     log_level: LogLevel,
-    port: Optional[str],
-    output: Optional[OutputMode],
+    output: OutputMode,
 ) -> None:
     """
     Control your Plus Deck 2C Cassette Drive through dbus.
@@ -91,24 +130,12 @@ def main(
 
     logging.basicConfig(level=getattr(logging, log_level))
 
-    raise NotImplementedError("main")
+    # Set the output mode for echo
+    echo.mode = output
 
-    # TODO: We don't actually need/want obj. Instead, we want to:
-    #
-    # 1. Set up the client
-    # 2. Get the config file path from the dbus client
-    # 3. Load the config based on that file path
-    #
-    # This implies that we want a separate Obj implementation with a client
-    # and a config attached to it.
+    client = DbusClient()
 
-    config: Config = Config.from_file(file=file)
-    ctx.obj = Obj(
-        config=config,
-        global_=global_,
-        port=port or config.port,
-        output=output or "text",
-    )
+    ctx.obj = Obj(client=client, output=output)
 
 
 @main.group()
@@ -121,46 +148,45 @@ def config() -> None:
 
 @config.command()
 @click.argument("name")
-@pass_client
-@click.pass_obj
-async def get(obj: Obj, client: DbusClient, name: str) -> None:
+@click.pass_config
+def get(config: Config, name: str) -> None:
     """
     Get a parameter from the configuration file.
     """
 
     try:
-        echo(obj.config.get(name))
+        echo(config.get(name))
     except ValueError as exc:
         echo(str(exc))
         sys.exit(1)
 
-    await client.reload()
-
 
 @config.command()
-@click.pass_obj
-def show(obj: Obj) -> None:
+@click.pass_config
+def show(config: Config) -> None:
     """
     Show the current configuration.
     """
-    echo(obj.config)
+    echo(config)
 
 
 @config.command()
 @click.argument("name")
 @click.argument("value")
+@pass_config
 @pass_client
-@click.pass_obj
-async def set(obj: Obj, client: DbusClient, name: str, value: str) -> None:
+@async_command
+async def set(config: Config, client: DbusClient, name: str, value: str) -> None:
     """
     Set a parameter in the configuration file.
     """
+
     try:
-        obj.config.set(name, value)
+        config.set(name, value)
     except ValueError as exc:
         echo(str(exc))
         sys.exit(1)
-    obj.config.to_file()
+    config.to_file()
 
     await client.reload()
 
