@@ -15,10 +15,14 @@ except ImportError:
 
 import click
 
-from plusdeck.cli.client import AsyncCommand, WrappedAsyncCommand
-from plusdeck.cli.logger import LogLevel
-from plusdeck.cli.output import echo, OutputMode
-from plusdeck.cli.types import STATE
+from plusdeck.cli import (
+    AsyncCommand,
+    echo,
+    LogLevel,
+    OutputMode,
+    STATE,
+    WrappedAsyncCommand,
+)
 from plusdeck.client import State
 from plusdeck.config import Config
 from plusdeck.dbus.interface import DBUS_NAME, DbusInterface

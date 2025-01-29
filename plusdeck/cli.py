@@ -1,21 +1,164 @@
 import asyncio
+from dataclasses import asdict, dataclass, is_dataclass
+from enum import Enum
+import functools
+import json
 import logging
 import os
 import sys
-from typing import Optional
+from typing import Any, Callable, Coroutine, List, Literal, Optional
 import warnings
 
-import click
+try:
+    from typing import Self
+except ImportError:
+    Self = Any
 
-from plusdeck.cli.client import pass_client
-from plusdeck.cli.logger import LogLevel
-from plusdeck.cli.obj import Obj
-from plusdeck.cli.output import echo, OutputMode
-from plusdeck.cli.types import STATE
-from plusdeck.client import Client, State
+import click
+from serial.serialutil import SerialException
+
+from plusdeck.client import Client, create_connection, State
 from plusdeck.config import Config, GLOBAL_FILE
 
 logger = logging.getLogger(__name__)
+
+OutputMode = Literal["text"] | Literal["json"]
+
+
+@dataclass
+class Obj:
+    """
+    The main click context object. Contains options collated from parameters and the
+    loaded config file.
+    """
+
+    config: Config
+    global_: bool
+    port: str
+    output: OutputMode
+
+
+LogLevel = (
+    Literal["DEBUG"]
+    | Literal["INFO"]
+    | Literal["WARNING"]
+    | Literal["ERROR"]
+    | Literal["CRITICAL"]
+)
+
+STATES: List[str] = [state.name for state in State]
+
+
+class PlusdeckState(click.Choice):
+    """
+    A Plus Deck 2C state.
+    """
+
+    name = "state"
+
+    def __init__(self: Self) -> None:
+        super().__init__(STATES)
+
+    def convert(
+        self: Self,
+        value: str,
+        param: Optional[click.Parameter],
+        ctx: Optional[click.Context],
+    ) -> State:
+        choice = super().convert(value, param, ctx)
+
+        return State[choice]
+
+
+STATE = PlusdeckState()
+
+
+def as_json(obj: Any) -> Any:
+    """
+    Convert an object into something that is JSON-serializable.
+    """
+
+    if isinstance(obj, Enum):
+        return obj.name
+    elif is_dataclass(obj.__class__):
+        return asdict(obj)
+    else:
+        return obj
+
+
+class Echo:
+    """
+    An abstraction for writing output to the terminal. Used to support the
+    behavior of the --output flag.
+    """
+
+    mode: OutputMode = "text"
+
+    def __call__(self: Self, obj: Any, *args, **kwargs) -> None:
+        if self.mode == "json":
+            try:
+                click.echo(json.dumps(as_json(obj), indent=2), *args, **kwargs)
+            except Exception as exc:
+                logger.debug(exc)
+                click.echo(json.dumps(repr(obj)), *args, **kwargs)
+        else:
+            if isinstance(obj, State):
+                obj = obj.name
+
+            click.echo(
+                obj if isinstance(obj, str) else repr(obj),
+                *args,
+                **kwargs,
+            )
+
+
+echo = Echo()
+
+AsyncCommand = Callable[..., Coroutine[None, None, None]]
+WrappedAsyncCommand = Callable[..., None]
+AsyncCommandDecorator = Callable[[AsyncCommand], WrappedAsyncCommand]
+
+
+def pass_client(run_forever: bool = False) -> AsyncCommandDecorator:
+    """
+    Create a client and pass it to the decorated click handler.
+    """
+
+    def decorator(fn: AsyncCommand) -> WrappedAsyncCommand:
+        @click.pass_obj
+        @functools.wraps(fn)
+        def wrapped(obj: Obj, *args, **kwargs) -> None:
+            port: str = obj.port
+            output = obj.output
+
+            # Set the output mode for echo
+            echo.mode = output
+
+            async def main() -> None:
+                try:
+                    client: Client = await create_connection(port)
+                except SerialException as exc:
+                    click.echo(exc)
+                    sys.exit(1)
+
+                # Giddyup!
+                await fn(client, *args, **kwargs)
+
+                # Close the client if we're done
+                if not run_forever:
+                    client.close()
+
+                # Await the client closing and surface any exceptions
+                await client.closed
+
+            try:
+                asyncio.run(main())
+            except KeyboardInterrupt:
+                pass
+
+        return wrapped
+
+    return decorator
 
 
 @click.group()
