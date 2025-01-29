@@ -6,7 +6,7 @@ import json
 import logging
 import os
 import sys
-from typing import Any, Callable, Coroutine, List, Literal, Optional, Self
+from typing import Any, Callable, Coroutine, List, Literal, Optional, Self, TypeVar
 import warnings
 
 import click
@@ -110,50 +110,62 @@ class Echo:
 echo = Echo()
 
 AsyncCommand = Callable[..., Coroutine[None, None, None]]
-WrappedAsyncCommand = Callable[..., None]
-AsyncCommandDecorator = Callable[[AsyncCommand], WrappedAsyncCommand]
+SyncCommand = Callable[..., None]
 
 
-def pass_client(run_forever: bool = False) -> AsyncCommandDecorator:
+def async_command(fn: AsyncCommand) -> SyncCommand:
     """
-    Create a client and pass it to the decorated click handler.
+    Run an async command handler.
     """
 
-    def decorator(fn: AsyncCommand) -> WrappedAsyncCommand:
+    @functools.wraps(fn)
+    def wrapped(*args, **kwargs) -> None:
+        try:
+            asyncio.run(fn(*args, **kwargs))
+        except KeyboardInterrupt:
+            pass
+
+    return wrapped
+
+
+def pass_client(run_forever: bool = False) -> Callable[[AsyncCommand], AsyncCommand]:
+    def decorator(fn: AsyncCommand) -> AsyncCommand:
         @click.pass_obj
         @functools.wraps(fn)
-        def wrapped(obj: Obj, *args, **kwargs) -> None:
+        async def wrapped(obj: Obj, *args, **kwargs) -> None:
             port: str = obj.port
-            output = obj.output
-
-            # Set the output mode for echo
-            echo.mode = output
-
-            async def main() -> None:
-                try:
-                    client: Client = await create_connection(port)
-                except SerialException as exc:
-                    click.echo(exc)
-                    sys.exit(1)
-
-                # Giddyup!
-                await fn(client, *args, **kwargs)
-
-                # Close the client if we're done
-                if not run_forever:
-                    client.close()
-
-                # Await the client closing and surface any exceptions
-                await client.closed
 
             try:
-                asyncio.run(main())
-            except KeyboardInterrupt:
-                pass
+                client: Client = await create_connection(port)
+            except SerialException as exc:
+                click.echo(exc)
+                sys.exit(1)
+
+            # Giddyup!
+            await fn(client, *args, **kwargs)
+
+            # Close the client if we're done
+            if not run_forever:
+                client.close()
+
+            # Await the client closing and surface any exceptions
+            await client.closed
 
         return wrapped
 
     return decorator
+
+
+R = TypeVar("R")
+
+
+def pass_config(fn: Callable[..., R]) -> Callable[..., R]:
+    @click.pass_obj
+    @functools.wraps(fn)
+    def wrapped(obj: Obj, *args, **kwargs) -> R:
+        return fn(obj.config, *args, **kwargs)
+
+    return wrapped
 
 
 @click.group()
@@ -213,6 +225,7 @@ def main(
         output=output or "text",
     )
 
+    echo.mode = ctx.obj.output
     logging.basicConfig(level=getattr(logging, log_level))
 
 
@@ -226,57 +239,57 @@ def config() -> None:
 
 @config.command()
 @click.argument("name")
-@click.pass_obj
-def get(obj: Obj, name: str) -> None:
+@pass_config
+def get(config: Config, name: str) -> None:
     """
     Get a parameter from the configuration file.
     """
 
     try:
-        echo(obj.config.get(name))
+        echo(config.get(name))
     except ValueError as exc:
         echo(str(exc))
         sys.exit(1)
 
 
 @config.command()
-@click.pass_obj
-def show(obj: Obj) -> None:
+@pass_config
+def show(config: Config) -> None:
     """
     Show the current configuration.
     """
-    echo(obj.config)
+    echo(config)
 
 
 @config.command()
 @click.argument("name")
 @click.argument("value")
-@click.pass_obj
-def set(obj: Obj, name: str, value: str) -> None:
+@pass_config
+def set(config: Config, name: str, value: str) -> None:
     """
     Set a parameter in the configuration file.
     """
     try:
-        obj.config.set(name, value)
+        config.set(name, value)
     except ValueError as exc:
         echo(str(exc))
         sys.exit(1)
-    obj.config.to_file()
+    config.to_file()
 
 
 @config.command()
 @click.argument("name")
-@click.pass_obj
-def unset(obj: Obj, name: str) -> None:
+@pass_config
+def unset(config: Config, name: str) -> None:
     """
     Unset a parameter in the configuration file.
     """
     try:
-        obj.config.unset(name)
+        config.unset(name)
     except ValueError as exc:
         echo(str(exc))
         sys.exit(1)
-    obj.config.to_file()
+    config.to_file()
 
 
 @main.group
@@ -287,6 +300,7 @@ def play() -> None:
 
 
 @play.command(name="a")
+@async_command
 @pass_client()
 async def play_a(client: Client) -> None:
     """
@@ -297,6 +311,7 @@ async def play_a(client: Client) -> None:
 
 
 @play.command(name="b")
+@async_command
 @pass_client()
 async def play_b(client: Client) -> None:
     """
@@ -314,6 +329,7 @@ def fast_forward() -> None:
 
 
 @fast_forward.command(name="a")
+@async_command
 @pass_client()
 async def fast_forward_a(client: Client) -> None:
     """
@@ -324,6 +340,7 @@ async def fast_forward_a(client: Client) -> None:
 
 
 @fast_forward.command(name="b")
+@async_command
 @pass_client()
 async def fast_forward_b(client: Client) -> None:
     """
@@ -341,6 +358,7 @@ def rewind() -> None:
 
 
 @rewind.command(name="a")
+@async_command
 @pass_client()
 async def rewind_a(client: Client) -> None:
     """
@@ -351,6 +369,7 @@ async def rewind_a(client: Client) -> None:
 
 
 @rewind.command(name="b")
+@async_command
 @pass_client()
 async def rewind_b(client: Client) -> None:
     """
@@ -361,6 +380,7 @@ async def rewind_b(client: Client) -> None:
 
 
 @main.command
+@async_command
 @pass_client()
 async def pause(client: Client) -> None:
     """
@@ -371,6 +391,7 @@ async def pause(client: Client) -> None:
 
 
 @main.command
+@async_command
 @pass_client()
 async def stop(client: Client) -> None:
     """
@@ -381,6 +402,7 @@ async def stop(client: Client) -> None:
 
 
 @main.command
+@async_command
 @pass_client()
 async def eject(client: Client) -> None:
     """
@@ -397,6 +419,7 @@ async def eject(client: Client) -> None:
     type=float,
     help="How long to wait for a state change from the Plus Deck 2C before timing out",
 )
+@async_command
 @pass_client()
 async def expect(client: Client, state: State, timeout: Optional[float]) -> None:
     """
@@ -412,9 +435,9 @@ async def expect(client: Client, state: State, timeout: Optional[float]) -> None
 
 @main.command
 @click.option("--for", "for_", type=float, help="Amount of time to listen for reports")
+@async_command
 @pass_client(run_forever=True)
-@click.pass_obj
-async def subscribe(obj: Obj, client: Client, for_: Optional[float]) -> None:
+async def subscribe(client: Client, for_: Optional[float]) -> None:
     """
     Subscribe to state changes
     """
