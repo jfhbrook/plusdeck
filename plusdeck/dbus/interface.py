@@ -180,6 +180,4 @@ class DbusInterface(  # type: ignore
 
     @dbus_signal_async("s")
     async def state(self: Self, state: str) -> str:
-        st = State[state]
-        # TODO: Implement me
         raise NotImplementedError("state")

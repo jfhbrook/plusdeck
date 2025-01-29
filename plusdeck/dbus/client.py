@@ -1,8 +1,9 @@
 import asyncio
+from collections.abc import AsyncIterable
 import functools
 import logging
 import sys
-from typing import Any, Optional
+from typing import Any, cast, Optional
 from unittest.mock import Mock
 
 try:
@@ -318,5 +319,10 @@ async def subscribe(obj: Obj, client: DbusClient, for_: Optional[float]) -> None
     Subscribe to state changes
     """
 
-    # TODO: What's the best way to support this?
-    raise NotImplementedError("subscribe")
+    try:
+        async with asyncio.timeout(for_):
+            # TODO: Why is this unhappy?
+            async for st in cast(AsyncIterable, client.state):
+                echo(State[st])
+    except TimeoutError:
+        pass

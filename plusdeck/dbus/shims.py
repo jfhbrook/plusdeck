@@ -1,4 +1,5 @@
-from typing import Any, Type
+from collections.abc import AsyncIterator
+from typing import Any, Callable, Type
 
 try:
     from typing import Self
@@ -17,9 +18,12 @@ class Property:
         raise NotImplementedError("set_async")
 
 
-class Signal:
+class Signal(AsyncIterator):
     def emit(self: Self, obj: Any) -> None:
         pass
+
+    async def __anext__(self: Self) -> str:
+        raise NotImplementedError("__anext__")
 
 
 def dbus_method_async(*args, **kwargs) -> Any:
@@ -29,14 +33,14 @@ def dbus_method_async(*args, **kwargs) -> Any:
     return decorator
 
 
-def dbus_property_async(*args, **kwargs) -> Any:
+def dbus_property_async(*args, **kwargs) -> Callable[[Any], Property]:
     def decorator(fn: Any) -> Property:
         return Property(fn)
 
     return decorator
 
 
-def dbus_signal_async(*args, **kwargs) -> Any:
+def dbus_signal_async(*args, **kwargs) -> Callable[[Any], Signal]:
     def decorator(f: Any) -> Any:
         return Signal()
 
