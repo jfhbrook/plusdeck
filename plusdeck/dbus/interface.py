@@ -172,10 +172,11 @@ class DbusInterface(  # type: ignore
         self.client.eject()
 
     @dbus_method_async("sf")
-    async def expect(self: Self, state: str, timeout: float) -> None:
+    async def wait_for(self: Self, state: str, timeout: float) -> None:
         st = State[state]
-        # TODO: Implement me
-        raise NotImplementedError("expect")
+        to = timeout if timeout > 0 else None
+
+        await self.client.wait_for(st, to)
 
     @dbus_signal_async("s")
     async def state(self: Self, state: str) -> str:

@@ -301,12 +301,12 @@ async def eject(client: DbusClient) -> None:
     help="How long to wait for a state change from the Plus Deck 2C before timing out",
 )
 @pass_client
-async def expect(client: DbusClient, state: State, timeout: Optional[float]) -> None:
+async def wait_for(client: DbusClient, state: State, timeout: Optional[float]) -> None:
     """
     Wait for an expected state
     """
 
-    await client.expect(state.name, timeout if timeout is not None else -1)
+    await client.wait_for(state.name, timeout if timeout is not None else -1)
 
 
 @main.command
