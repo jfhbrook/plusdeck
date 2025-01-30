@@ -21,7 +21,7 @@ _clean-venv:
 # Install all dependencies
 install:
   @just _venv
-  uv sync --dev
+  if [[ "$(uname -s)" == Linux ]]; then uv sync --dev --extra dbus; else uv sync --dev; fi
   uv pip install -e .
 
 # Update all dependencies
