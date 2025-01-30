@@ -1,8 +1,10 @@
 import asyncio
 
 import click
+from sdbus import (  # pyright: ignore [reportMissingModuleSource]
+    request_default_bus_name_async,
+)
 
-from sdbus import request_default_bus_name_async
 from plusdeck.config import GLOBAL_FILE
 from plusdeck.dbus.interface import DBUS_NAME, DbusInterface, load_client
 
