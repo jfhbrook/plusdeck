@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import functools
 import logging
 import sys
-from typing import cast, Optional, Self
+from typing import Any, cast, Optional, Self
 from unittest.mock import Mock
 
 import click
@@ -25,7 +25,7 @@ class DbusClient(DbusInterface):
     def __init__(self: Self) -> None:
         client = Mock(name="client", side_effect=NotImplementedError("client"))
         super().__init__("", client)
-        self._proxify(DBUS_NAME, "/")
+        cast(Any, self)._proxify(DBUS_NAME, "/")
 
 
 @dataclass

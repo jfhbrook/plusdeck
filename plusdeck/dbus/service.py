@@ -2,11 +2,7 @@ import asyncio
 
 import click
 
-try:
-    from sdbus import request_default_bus_name_async  # type: ignore
-except ImportError:
-    from plusdeck.dbus.shims import request_default_bus_name_async
-
+from sdbus import request_default_bus_name_async
 from plusdeck.config import GLOBAL_FILE
 from plusdeck.dbus.interface import DBUS_NAME, DbusInterface, load_client
 

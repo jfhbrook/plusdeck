@@ -1,20 +1,12 @@
 import asyncio
 from typing import Optional, Self
 
-try:
-    from sdbus import (  # type: ignore
-        dbus_method_async,
-        dbus_property_async,
-        dbus_signal_async,
-        DbusInterfaceCommonAsync,
-    )
-except ImportError:
-    from plusdeck.dbus.shims import (
-        dbus_method_async,
-        dbus_property_async,
-        dbus_signal_async,
-        DbusInterfaceCommonAsync,
-    )
+from sdbus import (
+    dbus_method_async,
+    dbus_property_async,
+    dbus_signal_async,
+    DbusInterfaceCommonAsync,
+)
 
 from plusdeck.client import Client, create_connection, Receiver, State
 from plusdeck.config import Config
@@ -174,5 +166,5 @@ class DbusInterface(  # type: ignore
         await self.client.wait_for(st, to)
 
     @dbus_signal_async("s")
-    async def state(self: Self, state: str) -> str:
+    def state(self: Self) -> str:
         raise NotImplementedError("state")
