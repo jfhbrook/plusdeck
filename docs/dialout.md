@@ -9,3 +9,5 @@ To add your user to the `dialout` group, you can run a command like this:
 ```bash
 usermod -a -G dialout "${USER}"
 ```
+
+Note that you may need to log out and back in before this takes effect.
