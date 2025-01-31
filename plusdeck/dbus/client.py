@@ -308,7 +308,7 @@ async def eject(client: DbusClient) -> None:
 )
 @async_command
 @pass_client
-async def wait_for(client: DbusClient, state: State, timeout: Optional[float]) -> None:
+async def expect(client: DbusClient, state: State, timeout: Optional[float]) -> None:
     """
     Wait for an expected state
     """
