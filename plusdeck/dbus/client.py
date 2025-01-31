@@ -1,5 +1,4 @@
 import asyncio
-from collections.abc import AsyncIterable
 from dataclasses import dataclass
 import functools
 import logging
@@ -328,8 +327,7 @@ async def subscribe(client: DbusClient, for_: Optional[float]) -> None:
 
     try:
         async with asyncio.timeout(for_):
-            # TODO: Why is this unhappy?
-            async for st in cast(AsyncIterable, client.state):
+            async for st in client.state:
                 echo(State[st])
     except TimeoutError:
         pass
