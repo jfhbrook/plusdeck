@@ -1424,6 +1424,7 @@ dependencies = [
     { name = "pyee" },
     { name = "pyserial" },
     { name = "pyserial-asyncio" },
+    { name = "pyyaml" },
 ]
 
 [package.optional-dependencies]
@@ -1457,6 +1458,7 @@ requires-dist = [
     { name = "pyee" },
     { name = "pyserial" },
     { name = "pyserial-asyncio" },
+    { name = "pyyaml" },
     { name = "sdbus", marker = "extra == 'dbus'" },
 ]
 

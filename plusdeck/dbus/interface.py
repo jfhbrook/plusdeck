@@ -10,6 +10,7 @@ from sdbus import (  # pyright: ignore [reportMissingModuleSource]
 
 from plusdeck.client import Client, create_connection, Receiver, State
 from plusdeck.config import Config
+from plusdeck.dbus.config import ConfigPayload
 
 DBUS_NAME = "org.jfhbrook.plusdeck"
 
@@ -28,15 +29,15 @@ class DbusInterface(  # type: ignore
 
     def __init__(self: Self, config_file: str, client: Client) -> None:
         super().__init__()
-        self._config_file = config_file
+        self._config: Config = Config.from_file(config_file)
         self.client: Client = client
         self._client_lock: asyncio.Lock = asyncio.Lock()
         self._rcv: Optional[Receiver] = None
         self.subscribe()
 
-    @dbus_property_async("s")
-    def config_file(self: Self) -> str:
-        return self._config_file
+    @dbus_property_async("(ss)")
+    def config(self: Self) -> ConfigPayload:
+        return (self._config.file or "", self._config.port)
 
     def subscribe(self: Self) -> None:
         self._subscription = asyncio.create_task(self.subscription())

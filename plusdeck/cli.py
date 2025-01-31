@@ -77,6 +77,8 @@ def as_json(obj: Any) -> Any:
         return obj.name
     elif is_dataclass(obj.__class__):
         return asdict(obj)
+    elif hasattr(obj, "as_dict"):
+        return obj.as_dict()
     else:
         return obj
 

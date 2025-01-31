@@ -11,6 +11,7 @@ import click
 from plusdeck.cli import async_command, AsyncCommand, echo, LogLevel, OutputMode, STATE
 from plusdeck.client import State
 from plusdeck.config import Config
+from plusdeck.dbus.config import StagedConfig
 from plusdeck.dbus.interface import DBUS_NAME, DbusInterface
 
 logger = logging.getLogger(__name__)
@@ -26,6 +27,16 @@ class DbusClient(DbusInterface):
         super().__init__("", client)
         cast(Any, self)._proxify(DBUS_NAME, "/")
 
+    async def config_staged(self: Self) -> StagedConfig:
+        file, port = await self.config
+
+        active_config: Config = cast(Any, Config)(file=file, port=port)
+
+        return StagedConfig(
+            target_config=Config.from_file(self._config.file),
+            active_config=active_config,
+        )
+
 
 @dataclass
 class Obj:
@@ -36,23 +47,13 @@ class Obj:
 
     client: DbusClient
     output: OutputMode
-    _config: Optional[Config] = None
-
-    async def config(self: Self) -> Config:
-        if not self._config:
-            config_file: str = await self.client.config_file
-            config: Config = Config.from_file(config_file)
-            self._config = config
-            return config
-        else:
-            return self._config
 
 
 def pass_config(fn: AsyncCommand) -> AsyncCommand:
     @click.pass_obj
     @functools.wraps(fn)
     async def wrapped(obj: Obj, *args, **kwargs) -> None:
-        config = await obj.config()
+        config = await obj.client.config_staged()
         await fn(config, *args, **kwargs)
 
     return wrapped
@@ -105,7 +106,7 @@ def main(
     ctx.obj = Obj(client=client, output=output)
 
 
-def warn_configuration_unsynced() -> None:
+def warn_dirty() -> None:
     logger.warn(
         """The service configuration is out of sync. To reload the service, run:
 
@@ -125,29 +126,32 @@ def config() -> None:
 @click.argument("name")
 @async_command
 @pass_config
-async def get(config: Config, name: str) -> None:
+async def get(staged: StagedConfig, name: str) -> None:
     """
     Get a parameter from the configuration file.
     """
 
     try:
-        echo(config.get(name))
+        echo(staged.get(name))
     except ValueError as exc:
         echo(str(exc))
-        sys.exit(1)
+        raise SystemExit(1)
+    finally:
+        if staged.dirty:
+            warn_dirty()
 
 
 @config.command()
 @async_command
 @pass_config
-async def show(config: Config) -> None:
+async def show(staged: StagedConfig) -> None:
     """
     Show the current configuration.
     """
-    echo(config)
+    echo(staged)
 
-    # TODO: Show unsynced configuration
-    # TODO: Call warn_configuration_unsynced if configuration out of sync
+    if staged.dirty:
+        warn_dirty()
 
 
 @config.command()
@@ -155,37 +159,41 @@ async def show(config: Config) -> None:
 @click.argument("value")
 @async_command
 @pass_config
-async def set(config: Config, name: str, value: str) -> None:
+async def set(staged: StagedConfig, name: str, value: str) -> None:
     """
     Set a parameter in the configuration file.
     """
 
     try:
-        config.set(name, value)
+        staged.set(name, value)
     except ValueError as exc:
         echo(str(exc))
         sys.exit(1)
-    config.to_file()
-
-    warn_configuration_unsynced()
+    else:
+        staged.to_file()
+    finally:
+        if staged.dirty:
+            warn_dirty()
 
 
 @config.command()
 @click.argument("name")
 @async_command
 @pass_config
-async def unset(config: Config, name: str) -> None:
+async def unset(staged: StagedConfig, name: str) -> None:
     """
     Unset a parameter in the configuration file.
     """
     try:
-        config.unset(name)
+        staged.unset(name)
     except ValueError as exc:
         echo(str(exc))
         sys.exit(1)
-    config.to_file()
-
-    warn_configuration_unsynced()
+    else:
+        staged.to_file()
+    finally:
+        if staged.dirty:
+            warn_dirty()
 
 
 @main.group
