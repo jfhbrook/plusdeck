@@ -105,6 +105,14 @@ def main(
     ctx.obj = Obj(client=client, output=output)
 
 
+def warn_configuration_unsynced() -> None:
+    logger.warn(
+        """The service configuration is out of sync. To reload the service, run:
+
+    sudo systemctl restart plusdeck"""
+    )
+
+
 @main.group()
 def config() -> None:
     """
@@ -138,14 +146,16 @@ async def show(config: Config) -> None:
     """
     echo(config)
 
+    # TODO: Show unsynced configuration
+    # TODO: Call warn_configuration_unsynced if configuration out of sync
+
 
 @config.command()
 @click.argument("name")
 @click.argument("value")
 @async_command
 @pass_config
-@pass_client
-async def set(config: Config, client: DbusClient, name: str, value: str) -> None:
+async def set(config: Config, name: str, value: str) -> None:
     """
     Set a parameter in the configuration file.
     """
@@ -157,15 +167,14 @@ async def set(config: Config, client: DbusClient, name: str, value: str) -> None
         sys.exit(1)
     config.to_file()
 
-    await client.reload()
+    warn_configuration_unsynced()
 
 
 @config.command()
 @click.argument("name")
 @async_command
 @pass_config
-@pass_client
-async def unset(config: Config, client: DbusClient, name: str) -> None:
+async def unset(config: Config, name: str) -> None:
     """
     Unset a parameter in the configuration file.
     """
@@ -176,7 +185,7 @@ async def unset(config: Config, client: DbusClient, name: str) -> None:
         sys.exit(1)
     config.to_file()
 
-    await client.reload()
+    warn_configuration_unsynced()
 
 
 @main.group

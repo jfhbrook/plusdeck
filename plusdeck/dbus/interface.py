@@ -29,7 +29,7 @@ class DbusInterface(  # type: ignore
     def __init__(self: Self, config_file: str, client: Client) -> None:
         super().__init__()
         self._config_file = config_file
-        self._client: Client = client
+        self.client: Client = client
         self._client_lock: asyncio.Lock = asyncio.Lock()
         self._rcv: Optional[Receiver] = None
         self.subscribe()
@@ -56,36 +56,16 @@ class DbusInterface(  # type: ignore
 
     async def close(self: Self) -> None:
         async with self._client_lock:
-            await self._close()
+            await self.client.unsubscribe()
 
-    async def _close(self: Self, reloading=False) -> None:
-        client = self.client
-
-        if not reloading:
-            await client.unsubscribe()
-
-        self._rcv = None
-        await self._subscription
-        client.close()
-        await client.closed
-
-    async def _closed(self: Self) -> None:
-        # Shenanigans to allow for a refresh that replaces the client
-        client = self.client
-        while not client.closed.done():
-            await client.closed
-            client = self.client
+            self._rcv = None
+            await self._subscription
+            self.client.close()
+            await self.client.closed
 
     @property
     def closed(self: Self) -> asyncio.Future:
-        return asyncio.ensure_future(self._closed())
-
-    @dbus_method_async()
-    async def reload(self: Self) -> None:
-        async with self._client_lock:
-            await self._close(reloading=True)
-            self.client = await load_client(self._config_file)
-            self.subscribe()
+        return self.client.closed
 
     @dbus_method_async()
     async def play_a(self: Self) -> None:
