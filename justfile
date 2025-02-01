@@ -41,7 +41,7 @@ _upgrade:
 compile:
   uv pip compile -o requirements.txt pyproject.toml
   cp requirements.txt requirements_dev.txt
-  cat requirements_dev.txt.in >> requirements_dev.txt
+  python3 -c 'import toml; print("\n".join(toml.load(open("pyproject.toml"))["dependency-groups"]["dev"]))' >> requirements_dev.txt
 
 _clean-compile:
   rm -f requirements.txt
