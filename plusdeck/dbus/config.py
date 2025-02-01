@@ -1,6 +1,6 @@
 from dataclasses import asdict, dataclass, fields
 import json
-from typing import Any, Dict, Literal, Self, Tuple, TypeVar
+from typing import Any, Dict, Generic, Literal, Self, Tuple, TypeVar
 
 import yaml
 
@@ -20,7 +20,7 @@ T = TypeVar("T")
 
 
 @dataclass
-class StagedAttr[T]:
+class StagedAttr(Generic[T]):
     type: StageType
     active: T
     target: T
