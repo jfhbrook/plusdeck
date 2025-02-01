@@ -27,7 +27,7 @@ class DbusClient(DbusInterface):
         super().__init__("", client)
         cast(Any, self)._proxify(DBUS_NAME, "/")
 
-    async def config_staged(self: Self) -> StagedConfig:
+    async def staged_config(self: Self) -> StagedConfig:
         file, port = await self.config
 
         active_config: Config = cast(Any, Config)(file=file, port=port)
@@ -53,7 +53,7 @@ def pass_config(fn: AsyncCommand) -> AsyncCommand:
     @click.pass_obj
     @functools.wraps(fn)
     async def wrapped(obj: Obj, *args, **kwargs) -> None:
-        config = await obj.client.config_staged()
+        config = await obj.client.staged_config()
         await fn(config, *args, **kwargs)
 
     return wrapped
