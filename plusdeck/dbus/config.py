@@ -87,7 +87,7 @@ class StagedConfig:
 
         dump = yaml.dump(d, Dumper=Dumper)
         return "\n".join(
-            [f"~ {l}" if "~>" in l else f"  {l}" for l in dump.split("\n")]
+            [f"~ {line}" if "~>" in line else f"  {line}" for line in dump.split("\n")]
         )
 
     def to_file(self: Self) -> None:
