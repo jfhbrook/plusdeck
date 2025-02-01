@@ -26,13 +26,18 @@ class StagedAttr[T]:
     target: T
 
     def __repr__(self: Self) -> str:
-        target: str = json.dumps(self.target)
+        target: str = (
+            self.target if type(self.target) is str else json.dumps(self.target)
+        )
+
         if self.type is None:
             return target
 
-        active: str = json.dumps(self.active)
+        active: str = (
+            self.active if type(self.active) is str else json.dumps(self.active)
+        )
 
-        return f"~ {active} ~> {target}"
+        return f"{active} ~> {target}"
 
 
 class StagedConfig:
@@ -80,7 +85,10 @@ class StagedConfig:
         for f in fields(self.target_config):
             d[f.name] = repr(self.get(f.name))
 
-        return yaml.dump(d, Dumper=Dumper)
+        dump = yaml.dump(d, Dumper=Dumper)
+        return "\n".join(
+            [f"~ {l}" if "~>" in l else f"  {l}" for l in dump.split("\n")]
+        )
 
     def to_file(self: Self) -> None:
         self.target_config.to_file()
