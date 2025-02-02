@@ -3,11 +3,16 @@ from typing import Any, cast
 import pytest
 
 from plusdeck.config import Config, GLOBAL_FILE
-from plusdeck.dbus.config import StagedConfig
+
+try:
+    from plusdeck.dbus.config import StagedConfig
+except ImportError:
+    StagedConfig = None
 
 cfg_cls = cast(Any, Config)
 
 
+@pytest.mark.skipif(StagedConfig is None, reason="dbus is not installed")
 @pytest.mark.parametrize(
     "active_config,target_config",
     [
@@ -22,10 +27,12 @@ cfg_cls = cast(Any, Config)
     ],
 )
 def test_staged_config_as_dict(active_config, target_config, snapshot) -> None:
-    staged = StagedConfig(active_config=active_config, target_config=target_config)
+    cls = cast(Any, StagedConfig)
+    staged = cls(active_config=active_config, target_config=target_config)
     assert staged.as_dict() == snapshot
 
 
+@pytest.mark.skipif(StagedConfig is None, reason="dbus is not installed")
 @pytest.mark.parametrize(
     "active_config,target_config",
     [
@@ -40,5 +47,6 @@ def test_staged_config_as_dict(active_config, target_config, snapshot) -> None:
     ],
 )
 def test_staged_config_repr(active_config, target_config, snapshot) -> None:
-    staged = StagedConfig(active_config=active_config, target_config=target_config)
+    cls = cast(Any, StagedConfig)
+    staged = cls(active_config=active_config, target_config=target_config)
     assert repr(staged) == snapshot
