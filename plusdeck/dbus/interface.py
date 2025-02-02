@@ -68,14 +68,14 @@ class DbusInterface(  # type: ignore
     def closed(self: Self) -> asyncio.Future:
         return self.client.closed
 
-    @dbus_method_async()
+    @dbus_method_async("")
     async def play_a(self: Self) -> None:
         """
         Play side A.
         """
         self.client.play_a()
 
-    @dbus_method_async()
+    @dbus_method_async("")
     async def play_b(self: Self) -> None:
         """
         Play side B.
@@ -83,7 +83,7 @@ class DbusInterface(  # type: ignore
 
         self.client.play_b()
 
-    @dbus_method_async()
+    @dbus_method_async("")
     async def fast_forward_a(self: Self) -> None:
         """
         Fast-forward side A.
@@ -91,7 +91,7 @@ class DbusInterface(  # type: ignore
 
         self.client.fast_forward_a()
 
-    @dbus_method_async()
+    @dbus_method_async("")
     async def fast_forward_b(self: Self) -> None:
         """
         Fast-forward side B.
@@ -99,7 +99,7 @@ class DbusInterface(  # type: ignore
 
         self.client.fast_forward_b()
 
-    @dbus_method_async()
+    @dbus_method_async("")
     async def rewind_a(self: Self) -> None:
         """
         Rewind side A. Equivalent to fast-forwarding side B.
@@ -107,7 +107,7 @@ class DbusInterface(  # type: ignore
 
         self.client.rewind_a()
 
-    @dbus_method_async()
+    @dbus_method_async("")
     async def rewind_b(self: Self) -> None:
         """
         Rewind side B. Equivalent to fast-forwarding side A.
@@ -115,7 +115,7 @@ class DbusInterface(  # type: ignore
 
         self.client.rewind_b()
 
-    @dbus_method_async()
+    @dbus_method_async("")
     async def pause(self: Self) -> None:
         """
         Pause if playing, or start playing if paused.
@@ -123,7 +123,7 @@ class DbusInterface(  # type: ignore
 
         self.client.pause()
 
-    @dbus_method_async()
+    @dbus_method_async("")
     async def stop(self: Self) -> None:
         """
         Stop the tape.
@@ -131,7 +131,7 @@ class DbusInterface(  # type: ignore
 
         self.client.stop()
 
-    @dbus_method_async()
+    @dbus_method_async("")
     async def eject(self: Self) -> None:
         """
         Eject the tape.
@@ -139,7 +139,7 @@ class DbusInterface(  # type: ignore
 
         self.client.eject()
 
-    @dbus_method_async("sf")
+    @dbus_method_async("sd")
     async def wait_for(self: Self, state: str, timeout: float) -> None:
         st = State[state]
         to = timeout if timeout > 0 else None

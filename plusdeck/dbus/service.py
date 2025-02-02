@@ -1,20 +1,30 @@
 import asyncio
+import logging
 
 import click
 from sdbus import (  # pyright: ignore [reportMissingModuleSource]
     request_default_bus_name_async,
 )
 
+from plusdeck.cli import LogLevel
 from plusdeck.config import GLOBAL_FILE
 from plusdeck.dbus.interface import DBUS_NAME, DbusInterface, load_client
+
+logger = logging.getLogger(__name__)
 
 
 async def service(config_file: str) -> DbusInterface:
     client = await load_client(config_file)
     iface = DbusInterface(config_file, client)
 
+    logger.debug(f"Requesting bus name {DBUS_NAME}...")
     await request_default_bus_name_async(DBUS_NAME)
+
+    logger.debug("Exporting interface to path /...")
+
     iface.export_to_dbus("/")
+
+    logger.info(f"Listening on {DBUS_NAME} /")
 
     return iface
 
@@ -33,8 +43,17 @@ async def serve(config_file: str) -> None:
     type=click.Path(),
     help="A path to a config file",
 )
-def main(config_file: str) -> None:
+@click.option(
+    "--log-level",
+    envvar="PLUSDECK_LOG_LEVEL",
+    type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]),
+    default="INFO",
+    help="Set the log level",
+)
+def main(config_file: str, log_level: LogLevel) -> None:
     # Assert the import works
     import sdbus  # noqa: F401 # type: ignore
+
+    logging.basicConfig(level=getattr(logging, log_level))
 
     asyncio.run(serve(config_file))
