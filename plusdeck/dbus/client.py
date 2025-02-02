@@ -35,7 +35,7 @@ class DbusClient(DbusInterface):
         active_config: Config = cast(Any, Config)(file=file, port=port)
 
         return StagedConfig(
-            target_config=Config.from_file(self._config.file),
+            target_config=Config.from_file(file),
             active_config=active_config,
         )
 
