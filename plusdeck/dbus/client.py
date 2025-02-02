@@ -24,7 +24,9 @@ class DbusClient(DbusInterface):
 
     def __init__(self: Self) -> None:
         client = Mock(name="client", side_effect=NotImplementedError("client"))
+        self.subscribe = Mock(name="client.subscribe")
         super().__init__("", client)
+
         cast(Any, self)._proxify(DBUS_NAME, "/")
 
     async def staged_config(self: Self) -> StagedConfig:
@@ -101,9 +103,11 @@ def main(
     # Set the output mode for echo
     echo.mode = output
 
-    client = DbusClient()
+    async def load() -> None:
+        client = DbusClient()
+        ctx.obj = Obj(client=client, output=output)
 
-    ctx.obj = Obj(client=client, output=output)
+    asyncio.run(load())
 
 
 def warn_dirty() -> None:
