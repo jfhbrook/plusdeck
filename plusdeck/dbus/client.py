@@ -387,7 +387,7 @@ async def expect(client: DbusClient, state: State, timeout: Optional[float]) -> 
     Wait for an expected state
     """
 
-    await client.wait_for(state.name, timeout if timeout is not None else -1)
+    await client.wait_for(state.name, timeout if timeout is not None else -1.0)
 
 
 @main.command
