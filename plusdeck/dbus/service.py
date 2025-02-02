@@ -51,9 +51,6 @@ async def serve(config_file: str) -> None:
     help="Set the log level",
 )
 def main(config_file: str, log_level: LogLevel) -> None:
-    # Assert the import works
-    import sdbus  # noqa: F401 # type: ignore
-
     logging.basicConfig(level=getattr(logging, log_level))
 
     asyncio.run(serve(config_file))
