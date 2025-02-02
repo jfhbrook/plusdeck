@@ -2,8 +2,13 @@ import asyncio
 from dataclasses import dataclass
 import functools
 import logging
+import os
+from pathlib import Path
+import shlex
+import shutil
+import subprocess
 import sys
-from typing import Any, cast, Optional, Self
+from typing import Any, cast, List, Optional, Self
 from unittest.mock import Mock
 
 import click
@@ -48,6 +53,7 @@ class Obj:
     """
 
     client: DbusClient
+    log_level: LogLevel
     output: OutputMode
 
 
@@ -72,6 +78,60 @@ def pass_client(fn: AsyncCommand) -> AsyncCommand:
         return await fn(obj.client, *args, **kwargs)
 
     return wrapped
+
+
+def should_sudo(config_file: str) -> bool:
+    """
+    Check whether or not sudo should be used when running a config command.
+    """
+    st = os.stat(config_file)
+    return os.geteuid() != st.st_uid
+
+
+def run_config_command(obj: Obj, staged: StagedConfig, argv: List[str]) -> None:
+    """
+    Run a config command in a subprocess. This allows for the use of sudo, if
+    necessary.
+    """
+
+    plusdeck_bin = str(Path(__file__).parent.parent / "cli.py")
+    args: List[str] = [
+        sys.executable,
+        plusdeck_bin,
+        "--config-file",
+        staged.file,
+        "--log-level",
+        obj.log_level,
+        "--output",
+        obj.output,
+        "config",
+    ] + argv
+
+    if should_sudo(staged.file):
+        args.insert(0, "sudo")
+
+    try:
+        logger.debug(f"Running command: {shlex.join(args)}")
+        subprocess.run(args, capture_output=False, check=True)
+    except subprocess.CalledProcessError as exc:
+        logger.debug(exc)
+        sys.exit(exc.returncode)
+
+
+def warn_dirty() -> None:
+    msg = "The service configuration is out of sync. "
+
+    if shutil.which("systemctl"):
+        msg += """To reload the service, run:
+
+    sudo system ctl restart plusdeck"""
+    else:
+        msg += (
+            "To update the configuration, reload the service with your OS's "
+            "init system."
+        )
+
+    logger.warn(msg)
 
 
 @click.group()
@@ -105,17 +165,9 @@ def main(
 
     async def load() -> None:
         client = DbusClient()
-        ctx.obj = Obj(client=client, output=output)
+        ctx.obj = Obj(client=client, log_level=log_level, output=output)
 
     asyncio.run(load())
-
-
-def warn_dirty() -> None:
-    logger.warn(
-        """The service configuration is out of sync. To reload the service, run:
-
-    sudo systemctl restart plusdeck"""
-    )
 
 
 @main.group()
@@ -163,18 +215,19 @@ async def show(staged: StagedConfig) -> None:
 @click.argument("value")
 @async_command
 @pass_config
-async def set(staged: StagedConfig, name: str, value: str) -> None:
+@click.pass_obj
+async def set(obj: Obj, staged: StagedConfig, name: str, value: str) -> None:
     """
     Set a parameter in the configuration file.
     """
 
     try:
-        staged.set(name, value)
+        run_config_command(obj, staged, ["set", name, value])
     except ValueError as exc:
         echo(str(exc))
         sys.exit(1)
     else:
-        staged.to_file()
+        staged.reload_target()
     finally:
         if staged.dirty:
             warn_dirty()
@@ -352,3 +405,7 @@ async def subscribe(client: DbusClient, for_: Optional[float]) -> None:
                 echo(State[st])
     except TimeoutError:
         pass
+
+
+if __name__ == "__main__":
+    main()

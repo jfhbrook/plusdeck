@@ -57,3 +57,7 @@ def main(config_file: str, log_level: LogLevel) -> None:
     logging.basicConfig(level=getattr(logging, log_level))
 
     asyncio.run(serve(config_file))
+
+
+if __name__ == "__main__":
+    main()

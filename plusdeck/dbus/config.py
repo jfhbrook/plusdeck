@@ -48,6 +48,24 @@ class StagedConfig:
         self.target_config: Config = target_config
         self.dirty = False
 
+    def reload_target(self: Self) -> None:
+        self.target_config = Config.from_file(self.file)
+        self._check_config_dirty()
+
+    def _check_attr_dirty(self: Self, name: str) -> None:
+        if self.target_config.get(name) != self.active_config.get(name):
+            self.dirty = True
+
+    def _check_config_dirty(self: Self) -> None:
+        for f in fields(self.target_config):
+            self._check_attr_dirty(f.name)
+
+    @property
+    def file(self: Self) -> str:
+        file = self.target_config.file
+        assert file is not None, "Target config must be from a file"
+        return file
+
     def get(self: Self, name: str) -> StagedAttr[Any]:
         active_attr = self.active_config.get(name)
         target_attr = self.target_config.get(name)
@@ -63,13 +81,11 @@ class StagedConfig:
 
     def set(self: Self, name: str, value: str) -> None:
         self.target_config.set(name, value)
-        if self.target_config.get(name) != self.active_config.get(name):
-            self.dirty = True
+        self._check_attr_dirty(name)
 
     def unset(self: Self, name: str) -> None:
         self.target_config.unset(name)
-        if self.target_config.get(name) != self.active_config.get(name):
-            self.dirty = True
+        self._check_attr_dirty(name)
 
     def as_dict(self: Self) -> Dict[str, Any]:
         d: Dict[str, Any] = dict()

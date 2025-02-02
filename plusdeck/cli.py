@@ -7,7 +7,6 @@ import logging
 import os
 import sys
 from typing import Any, Callable, Coroutine, List, Literal, Optional, Self, TypeVar
-import warnings
 
 import click
 from serial.serialutil import SerialException
@@ -210,10 +209,12 @@ def main(
     Control your Plus Deck 2C tape deck.
     """
 
+    logging.basicConfig(level=getattr(logging, log_level))
+
     file = None
     if config_file:
         if global_:
-            warnings.warn(
+            logger.debug(
                 "--config-file is specified, so --global flag will be ignored."
             )
         file = config_file
@@ -228,7 +229,6 @@ def main(
     )
 
     echo.mode = ctx.obj.output
-    logging.basicConfig(level=getattr(logging, log_level))
 
 
 @main.group()
@@ -467,3 +467,7 @@ async def subscribe(client: Client, for_: Optional[float]) -> None:
         await client.closed
     else:
         await subscription
+
+
+if __name__ == "__main__":
+    main()
