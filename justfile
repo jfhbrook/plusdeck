@@ -21,7 +21,7 @@ _clean-venv:
 # Install all dependencies
 install:
   @just _venv
-  uv sync --dev
+  if [[ "$(uname -s)" == Linux ]]; then uv sync --dev --extra dbus; else uv sync --dev; fi
   uv pip install -e .
 
 # Update all dependencies
@@ -41,7 +41,7 @@ _upgrade:
 compile:
   uv pip compile -o requirements.txt pyproject.toml
   cp requirements.txt requirements_dev.txt
-  cat requirements_dev.txt.in >> requirements_dev.txt
+  python3 -c 'import toml; print("\n".join(toml.load(open("pyproject.toml"))["dependency-groups"]["dev"]))' >> requirements_dev.txt
 
 _clean-compile:
   rm -f requirements.txt
@@ -80,6 +80,11 @@ check:
 # Run tests with pytest
 test:
   uv run pytest -vvv ./tests
+  @just _clean-test
+
+# Update snapshots
+snap:
+  uv run pytest --snapshot-update ./tests
   @just _clean-test
 
 # Run integration tests (for what they are)

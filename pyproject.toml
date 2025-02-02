@@ -33,11 +33,19 @@ dependencies = [
   "ipywidgets",
   "pyee",
   "pyserial",
-  "pyserial-asyncio"
+  "pyserial-asyncio",
+  "pyyaml",
+]
+
+[project.optional-dependencies]
+dbus = [
+  "sdbus",
 ]
 
 [project.scripts]
 plusdeck = "plusdeck.cli:main"
+plusdeckd = "plusdeck.dbus.service:main"
+plusdeckctl = "plusdeck.dbus.client:main"
 
 [dependency-groups]
 dev = [
@@ -52,6 +60,7 @@ dev = [
   "mkdocs-include-markdown-plugin",
   "mkdocstrings[python]",
   "rich",
+  "syrupy",
   "tox",
   "twine",
   "validate-pyproject[all]",

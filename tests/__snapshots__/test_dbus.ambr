@@ -1,0 +1,43 @@
+# serializer version: 1
+# name: test_staged_config_as_dict[active_config0-target_config0]
+  dict({
+    'file': dict({
+      'active': '/etc/plusdeck.yaml',
+      'target': '/etc/plusdeck.yaml',
+      'type': None,
+    }),
+    'port': dict({
+      'active': '/dev/ttyS0',
+      'target': '/dev/ttyS0',
+      'type': None,
+    }),
+  })
+# ---
+# name: test_staged_config_as_dict[active_config1-target_config1]
+  dict({
+    'file': dict({
+      'active': '/etc/plusdeck.yaml',
+      'target': '/etc/plusdeck.yaml',
+      'type': None,
+    }),
+    'port': dict({
+      'active': '/dev/ttyS0',
+      'target': '/dev/ttyS4',
+      'type': 'set',
+    }),
+  })
+# ---
+# name: test_staged_config_repr[active_config0-target_config0]
+  '''
+    file: /etc/plusdeck.yaml
+    port: /dev/ttyS0
+    
+  '''
+# ---
+# name: test_staged_config_repr[active_config1-target_config1]
+  '''
+    file: /etc/plusdeck.yaml
+  ~ port: /dev/ttyS0 ~> /dev/ttyS4
+    
+  '''
+# ---

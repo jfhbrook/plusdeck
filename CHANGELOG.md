@@ -1,4 +1,9 @@
 - Remove `appdirs` dependency
+- dbus support:
+  - `plusdeck.dbus.DbusInterface` dbus Interface class
+  - `plusdeck.dbus.DbusClient` dbus client class
+  - `plusdeckd` dbus service CLI
+  - `plusdeckctl` dbus client CLI
 
 2025/01/26 Version 2.0.0
 ------------------------

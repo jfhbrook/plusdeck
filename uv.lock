@@ -1424,6 +1424,12 @@ dependencies = [
     { name = "pyee" },
     { name = "pyserial" },
     { name = "pyserial-asyncio" },
+    { name = "pyyaml" },
+]
+
+[package.optional-dependencies]
+dbus = [
+    { name = "sdbus" },
 ]
 
 [package.dev-dependencies]
@@ -1439,6 +1445,7 @@ dev = [
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "rich" },
+    { name = "syrupy" },
     { name = "tox" },
     { name = "twine" },
     { name = "validate-pyproject", extra = ["all"] },
@@ -1452,6 +1459,8 @@ requires-dist = [
     { name = "pyee" },
     { name = "pyserial" },
     { name = "pyserial-asyncio" },
+    { name = "pyyaml" },
+    { name = "sdbus", marker = "extra == 'dbus'" },
 ]
 
 [package.metadata.requires-dev]
@@ -1467,6 +1476,7 @@ dev = [
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "rich" },
+    { name = "syrupy" },
     { name = "tox" },
     { name = "twine" },
     { name = "validate-pyproject", extras = ["all"] },
@@ -1966,6 +1976,16 @@ wheels = [
 ]
 
 [[package]]
+name = "sdbus"
+version = "0.13.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/4f/c7/8740ff78e9ffdbb9a28e7722e145795015c62ea7ce812242f5968073511c/sdbus-0.13.0.tar.gz", hash = "sha256:801bd46608ee82614d42960c8ba8ae9300edb1bf5bbeb534bc8fd21f13d2c20e", size = 85887 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/85/fb/060bc3ffdbfae6062800ee516b68c5a050e5c4cb9424759a7650462a9f5b/sdbus-0.13.0-cp37-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:fcc88e70e76723234fd0987edccbcc3fe5f4e99245eb30a6b362ef7f882fd8a3", size = 540599 },
+    { url = "https://files.pythonhosted.org/packages/57/33/5d6d93d2897901cf503ed6db47b10208195fedaa0ed4e9f7c9f511fc649c/sdbus-0.13.0-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:199a4c321fc5b4cded57a110f82625f6541909c40e733f574d12afc5ace149a7", size = 539172 },
+]
+
+[[package]]
 name = "secretstorage"
 version = "3.3.3"
 source = { registry = "https://pypi.org/simple" }
@@ -2035,6 +2055,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/28/e3/55dcc2cfbc3ca9c29519eb6884dd1415ecb53b0e934862d3559ddcb7e20b/stack_data-0.6.3.tar.gz", hash = "sha256:836a778de4fec4dcd1dcd89ed8abff8a221f58308462e1c4aa2a3cf30148f0b9", size = 44707 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f1/7b/ce1eafaf1a76852e2ec9b22edecf1daa58175c090266e9f6c64afcd81d91/stack_data-0.6.3-py3-none-any.whl", hash = "sha256:d5558e0c25a4cb0853cddad3d77da9891a08cb85dd9f9f91b9f8cd66e511e695", size = 24521 },
+]
+
+[[package]]
+name = "syrupy"
+version = "4.8.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pytest" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c4/32/8b56491ed50ae103c2db14885c29fe765170bdf044fe5868548113da35ef/syrupy-4.8.1.tar.gz", hash = "sha256:8da8c0311e6d92de0b15767768c6ab98982b7b4a4c67083c08fbac3fbad4d44c", size = 50192 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/80/47/5e8f44ec0f287b08e8c1f3fc63fe1fbe182f07bf606eec903d7827b95e51/syrupy-4.8.1-py3-none-any.whl", hash = "sha256:274f97cbaf44175f5e478a2f3a53559d31f41c66c6bf28131695f94ac893ea00", size = 50326 },
 ]
 
 [[package]]
