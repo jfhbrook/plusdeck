@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from typing import Optional, Self
 
 from sdbus import (  # pyright: ignore [reportMissingModuleSource]
@@ -11,6 +12,8 @@ from sdbus import (  # pyright: ignore [reportMissingModuleSource]
 from plusdeck.client import Client, create_connection, Receiver, State
 from plusdeck.config import Config
 from plusdeck.dbus.config import ConfigPayload
+
+logger = logging.getLogger(__name__)
 
 DBUS_NAME = "org.jfhbrook.plusdeck"
 
@@ -156,17 +159,24 @@ class DbusInterface(  # type: ignore
 
         self.client.eject()
 
-    @dbus_method_async("sd")
-    async def wait_for(self: Self, state: str, timeout: float) -> None:
+    @dbus_method_async("sd", "b")
+    async def wait_for(self: Self, state: str, timeout: float) -> bool:
         """
         Wait for an expected state, with an optional timeout. When timeout is negative,
         it will be ignored.
         """
 
+        ok = True
+
         st = State[state]
         to = timeout if timeout >= 0 else None
 
-        await self.client.wait_for(st, to)
+        try:
+            await self.client.wait_for(st, to)
+        except TimeoutError:
+            ok = False
+
+        return ok
 
     @dbus_property_async("s")
     def current_state(self: Self) -> str:
