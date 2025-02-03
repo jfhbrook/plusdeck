@@ -70,7 +70,18 @@ def pass_client(fn: AsyncCommand) -> AsyncCommand:
     @click.pass_obj
     @functools.wraps(fn)
     async def wrapped(obj: Obj, *args, **kwargs) -> None:
-        return await fn(obj.client, *args, **kwargs)
+        try:
+            await fn(obj.client, *args, **kwargs)
+        except Exception as exc:
+            if hasattr(exc, "dbus_error_name"):
+                dbus_error_name = cast(Any, exc).dbus_error_name
+                dbus_msg = str(exc)
+                if dbus_msg:
+                    logger.error(f"{dbus_error_name}: {dbus_msg}")
+                else:
+                    logger.error(f"{dbus_error_name}")
+                sys.exit(1)
+            raise
 
     return wrapped
 
