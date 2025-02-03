@@ -229,7 +229,7 @@ class Client(asyncio.Protocol):
 
     def send(self, command: Command) -> None:
         """
-        Send a command to the Plus Deck 2C.
+        Send a command to the Plus Deck 2C PC Cassette Deck.
         """
 
         if not self._transport:
@@ -476,7 +476,7 @@ async def create_connection(
     loop: Optional[asyncio.AbstractEventLoop] = None,
 ) -> Client:
     """
-    Create a connection to the Plus Deck 2C.
+    Create a connection to the Plus Deck 2C PC Cassette Deck.
     """
 
     _loop = loop if loop else asyncio.get_running_loop()
@@ -502,7 +502,8 @@ async def connection(
     loop: Optional[asyncio.AbstractEventLoop] = None,
 ) -> AsyncGenerator[Client, None]:
     """
-    Create a connection to Plus Deck 2C, with an associated async context.
+    Create a connection to Plus Deck 2C PC Cassette Deck, with an associated async
+    context.
 
     This context will automatically close the connection on exit and wait for the
     connection to close.

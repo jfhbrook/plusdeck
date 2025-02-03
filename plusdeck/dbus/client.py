@@ -365,7 +365,8 @@ async def eject(client: DbusClient) -> None:
 @click.option(
     "--timeout",
     type=float,
-    help="How long to wait for a state change from the Plus Deck 2C before timing out",
+    help="How long to wait for a state change from the Plus Deck 2C PC Cassette Deck"
+    "before timing out",
 )
 @async_command
 @pass_client
