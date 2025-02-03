@@ -36,6 +36,7 @@ class DbusInterface(  # type: ignore
         self.client: Client = client
         self._client_lock: asyncio.Lock = asyncio.Lock()
         self._rcv: Optional[Receiver] = None
+        self._current_state: State = State.UNSUBSCRIBED
         self.subscribe()
 
     @dbus_property_async("(ss)")
@@ -58,6 +59,7 @@ class DbusInterface(  # type: ignore
                 break
             try:
                 state: State = await self._rcv.get_state()
+                self._current_state = state
                 self.state.emit(state.name)  # type: ignore
             except TimeoutError:
                 pass
@@ -166,10 +168,17 @@ class DbusInterface(  # type: ignore
 
         await self.client.wait_for(st, to)
 
+    @dbus_property_async("s")
+    def current_state(self: Self) -> str:
+        """
+        Get the last known state of the Plus Deck 2C PC Cassette Deck.
+        """
+        return self._current_state.name
+
     @dbus_signal_async("s")
     def state(self: Self) -> str:
         """
-        Listen for updates to the state of the Plus Deck 2C.
+        Listen for updates to the state of the Plus Deck 2C Cassette Deck.
         """
 
         raise NotImplementedError("state")

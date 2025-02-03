@@ -361,6 +361,17 @@ async def eject(client: DbusClient) -> None:
 
 
 @main.command
+@async_command
+@pass_client
+async def state(client: DbusClient) -> None:
+    """
+    Get the current state
+    """
+
+    echo(await client.current_state)
+
+
+@main.command
 @click.argument("state", type=STATE)
 @click.option(
     "--timeout",
