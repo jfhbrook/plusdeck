@@ -12,6 +12,8 @@ The DBus service can be launched using `plusdeckd`:
 $ plusdeckd --help
 Usage: plusdeckd [OPTIONS]
 
+  Expose the Plus Deck 2C PC Cassette Deck as a DBus service.
+
 Options:
   -C, --config-file PATH          A path to a config file
   --log-level [DEBUG|INFO|WARNING|ERROR|CRITICAL]

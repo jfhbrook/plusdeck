@@ -26,6 +26,9 @@ async def load_client(config_file: str) -> Client:
 class DbusInterface(  # type: ignore
     DbusInterfaceCommonAsync, interface_name=DBUS_NAME  # type: ignore
 ):
+    """
+    A DBus interface for controlling the Plus Deck 2C PC Cassette Deck.
+    """
 
     def __init__(self: Self, config_file: str, client: Client) -> None:
         super().__init__()
@@ -37,6 +40,10 @@ class DbusInterface(  # type: ignore
 
     @dbus_property_async("(ss)")
     def config(self: Self) -> ConfigPayload:
+        """
+        The DBus service's currently loaded configuration.
+        """
+
         return (self._config.file or "", self._config.port)
 
     def subscribe(self: Self) -> None:
@@ -56,6 +63,10 @@ class DbusInterface(  # type: ignore
                 pass
 
     async def close(self: Self) -> None:
+        """
+        Unsubscribe from events and close the client.
+        """
+
         async with self._client_lock:
             await self.client.unsubscribe()
 
@@ -66,6 +77,10 @@ class DbusInterface(  # type: ignore
 
     @property
     def closed(self: Self) -> asyncio.Future:
+        """
+        A Future that resolves when the client is closed.
+        """
+
         return self.client.closed
 
     @dbus_method_async("")
@@ -141,11 +156,20 @@ class DbusInterface(  # type: ignore
 
     @dbus_method_async("sd")
     async def wait_for(self: Self, state: str, timeout: float) -> None:
+        """
+        Wait for an expected state, with an optional timeout. When timeout is negative,
+        it will be ignored.
+        """
+
         st = State[state]
-        to = timeout if timeout > 0 else None
+        to = timeout if timeout >= 0 else None
 
         await self.client.wait_for(st, to)
 
     @dbus_signal_async("s")
     def state(self: Self) -> str:
+        """
+        Listen for updates to the state of the Plus Deck 2C.
+        """
+
         raise NotImplementedError("state")

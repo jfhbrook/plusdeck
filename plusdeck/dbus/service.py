@@ -14,6 +14,10 @@ logger = logging.getLogger(__name__)
 
 
 async def service(config_file: str) -> DbusInterface:
+    """
+    Create a configure DBus service with a supplied config file.
+    """
+
     client = await load_client(config_file)
     iface = DbusInterface(config_file, client)
 
@@ -30,6 +34,10 @@ async def service(config_file: str) -> DbusInterface:
 
 
 async def serve(config_file: str) -> None:
+    """
+    Create and serve configure DBus service with a supplied config file.
+    """
+
     srv = await service(config_file)
 
     await srv.closed
@@ -51,6 +59,10 @@ async def serve(config_file: str) -> None:
     help="Set the log level",
 )
 def main(config_file: str, log_level: LogLevel) -> None:
+    """
+    Expose the Plus Deck 2C PC Cassette Deck as a DBus service.
+    """
+
     logging.basicConfig(level=getattr(logging, log_level))
 
     asyncio.run(serve(config_file))

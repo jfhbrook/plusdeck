@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 class DbusClient(DbusInterface):
     """
-    Plus Deck 2C dbus client.
+    A DBus client for the Plus Deck 2C PC Cassette Deck.
     """
 
     def __init__(self: Self) -> None:
@@ -35,6 +35,10 @@ class DbusClient(DbusInterface):
         cast(Any, self)._proxify(DBUS_NAME, "/")
 
     async def staged_config(self: Self) -> StagedConfig:
+        """
+        Fetch the state of staged configuration changes.
+        """
+
         file, port = await self.config
 
         active_config: Config = cast(Any, Config)(file=file, port=port)
@@ -47,11 +51,6 @@ class DbusClient(DbusInterface):
 
 @dataclass
 class Obj:
-    """
-    The main click context object. Includes a dbus client and the ability to load
-    the service's active config file.
-    """
-
     client: DbusClient
     log_level: LogLevel
     output: OutputMode
@@ -68,10 +67,6 @@ def pass_config(fn: AsyncCommand) -> AsyncCommand:
 
 
 def pass_client(fn: AsyncCommand) -> AsyncCommand:
-    """
-    Create a dbus client and pass it to the decorated click handler.
-    """
-
     @click.pass_obj
     @functools.wraps(fn)
     async def wrapped(obj: Obj, *args, **kwargs) -> None:
@@ -81,19 +76,11 @@ def pass_client(fn: AsyncCommand) -> AsyncCommand:
 
 
 def should_sudo(config_file: str) -> bool:
-    """
-    Check whether or not sudo should be used when running a config command.
-    """
     st = os.stat(config_file)
     return os.geteuid() != st.st_uid
 
 
 def run_config_command(obj: Obj, staged: StagedConfig, argv: List[str]) -> None:
-    """
-    Run a config command in a subprocess. This allows for the use of sudo, if
-    necessary.
-    """
-
     plusdeck_bin = str(Path(__file__).parent.parent / "cli.py")
     args: List[str] = [
         sys.executable,
