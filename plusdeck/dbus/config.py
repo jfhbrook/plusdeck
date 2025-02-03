@@ -13,7 +13,7 @@ from plusdeck.config import Config
 
 File = str
 Port = str
-ConfigPayload = Tuple[File, Port]
+ConfigStruct = Tuple[File, Port]
 
 StageType = Literal["set"] | Literal["unset"] | None
 T = TypeVar("T")

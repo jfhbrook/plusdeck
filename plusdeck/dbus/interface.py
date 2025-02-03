@@ -11,7 +11,7 @@ from sdbus import (  # pyright: ignore [reportMissingModuleSource]
 
 from plusdeck.client import Client, create_connection, Receiver, State
 from plusdeck.config import Config
-from plusdeck.dbus.config import ConfigPayload
+from plusdeck.dbus.config import ConfigStruct
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +43,7 @@ class DbusInterface(  # type: ignore
         self.subscribe()
 
     @dbus_property_async("(ss)")
-    def config(self: Self) -> ConfigPayload:
+    def config(self: Self) -> ConfigStruct:
         """
         The DBus service's currently loaded configuration.
         """
