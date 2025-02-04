@@ -23,6 +23,7 @@
   - MacOS: [Docker](https://www.docker.com/)
 - [yq](https://github.com/mikefarah/yq)
 - [gomplate](https://github.com/hairyhenderson/gomplate)
+- `op` CLI, with a secret called `PyPI` and a field called `API Token` with an API token in it
 
 ## Common Tasks
 
