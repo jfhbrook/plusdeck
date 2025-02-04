@@ -152,7 +152,7 @@ generate-spec:
 
 # Update the package version in ./copr/python-plusdeck.yml
 copr-update-version:
-  VERSION="$(./scripts/version.py)" yq -i '.spec.packageversion = strenv(VERSION)' copr/python-plusdeck.yml
+  VERSION="$(./scripts/version.py)" yq -i '.spec.packageversion = strenv(VERSION)' ./copr/python-plusdeck.yml
 
 # Commit generated files
 commit-generated-files:
