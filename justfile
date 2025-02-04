@@ -2,7 +2,7 @@ set dotenv-load := true
 
 # Generally this is '1', but may be incremented if a versioned package release
 # is broken.
-RELEASE := "1"
+RELEASE := "2"
 
 # By default, run checks and tests, then format and lint
 default:
