@@ -9,3 +9,4 @@ plusdeck.egg-info/
 venv
 .env
 .ipynb_checkpoints
+plusdeck-*.tar.gz
