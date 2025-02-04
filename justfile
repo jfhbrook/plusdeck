@@ -188,7 +188,7 @@ push:
 
 # Publish package to PyPI
 publish-pypi: build
-  uv publish -u __token__
+  uv publish -t "$(op item get 'PyPI' --fields 'API Token' --reveal)"
 
 # Create a GitHub release
 gh-release:
