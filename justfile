@@ -154,6 +154,14 @@ generate-spec:
 copr-update-version:
   VERSION="$(./scripts/version.py)" yq -i '.spec.packageversion = strenv(VERSION)' copr/python-plusdeck.yml
 
+# Commit generated files
+commit-generated-files:
+  git add requirements.txt
+  git add requirements_dev.txt
+  git add plusdeck.spec
+  git add ./copr
+  git commit -m 'Update generated files'
+
 # Fail if there are uncommitted files
 check-dirty:
   ./scripts/is-dirty.sh
@@ -196,11 +204,11 @@ build-copr package:
 
 # Publish the release on PyPI, GitHub and Copr
 publish:
-  # Update requirements files
+  # Generate files and commit
   @just compile
-  # Update versions to match pyproject.toml
   @just generate-spec
   @just copr-update-version
+  @just commit-generated-files
   # Ensure git is in a good state
   @just check-main-branch
   @just check-dirty
