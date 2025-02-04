@@ -18,8 +18,7 @@ with open("CHANGELOG.md", "r") as f:
             m = re.findall(TITLE_RE, line)
             if not found and m and m[0] == VERSION:
                 found = True
-                # Consume ----- line
-                next(it)
+                changelog += line
             elif m:
                 # Found next entry
                 break
