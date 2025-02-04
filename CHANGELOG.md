@@ -1,3 +1,5 @@
+2025/02/04 Version 3.0.0
+------------------------
 - Remove `appdirs` dependency
 - dbus support:
   - `plusdeck.dbus.DbusInterface` dbus Interface class
