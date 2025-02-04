@@ -69,13 +69,14 @@ start *argv:
 
 # Format with black and isort
 format:
-  uv run black './plusdeck' ./tests
-  uv run isort --settings-file . './plusdeck' ./tests
+  uv run black './plusdeck' ./tests ./scripts
+  uv run isort --settings-file . './plusdeck' ./tests ./scripts
 
 # Lint with flake8
 lint:
-  uv run flake8 './plusdeck' ./tests
+  uv run flake8 './plusdeck' ./tests ./scripts
   uv run validate-pyproject ./pyproject.toml
+  shellcheck ./scripts/*.sh
 
 # Check type annotations with pyright
 check:
