@@ -160,7 +160,7 @@ commit-generated-files:
   git add requirements_dev.txt
   git add plusdeck.spec
   git add ./copr
-  git commit -m 'Update generated files'
+  git commit -m 'Update generated files' || echo 'No changes to files'
 
 # Fail if there are uncommitted files
 check-dirty:
