@@ -2,7 +2,7 @@ set dotenv-load := true
 
 # Generally this is '1', but may be incremented if a versioned package release
 # is broken.
-PATCH := "1"
+RELEASE := "1"
 
 # By default, run checks and tests, then format and lint
 default:
@@ -148,7 +148,7 @@ clean-build:
 
 # Generate plusdeck.spec
 generate-spec:
-  ./scripts/generate-spec.sh "$(./scripts/version.py)" '{{ PATCH }}'
+  ./scripts/generate-spec.sh "$(./scripts/version.py)" '{{ RELEASE }}'
 
 # Update the package version in ./copr/python-plusdeck.yml
 copr-update-version:
@@ -192,7 +192,7 @@ publish-pypi: build
 
 # Create a GitHub release
 gh-release:
-  bash ./scripts/release.sh "$(python ./scripts/get-version.py)" '{{ PATCH }}'
+  bash ./scripts/release.sh "$(python ./scripts/get-version.py)" '{{ RELEASE }}'
 
 # Apply a COPR package configuration
 apply-copr package:
