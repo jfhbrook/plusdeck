@@ -1,5 +1,9 @@
 set dotenv-load := true
 
+# Generally this is '1', but may be incremented if a versioned package release
+# is broken.
+RELEASE := "1"
+
 # By default, run checks and tests, then format and lint
 default:
   if [ ! -d venv ]; then just install; fi
@@ -12,15 +16,15 @@ default:
 # Installing, updating and upgrading dependencies
 #
 
-_venv:
+venv:
   if [ ! -d .venv ]; then uv venv; fi
 
-_clean-venv:
+clean-venv:
   rm -rf .venv
 
 # Install all dependencies
 install:
-  @just _venv
+  @just venv
   if [[ "$(uname -s)" == Linux ]]; then uv sync --dev --extra dbus; else uv sync --dev; fi
   uv pip install -e .
 
@@ -33,8 +37,8 @@ upgrade:
   if [ -d venv ]; then just update && just check && just _upgrade; else just update; fi
 
 _upgrade:
-  @just _clean-venv
-  @just _venv
+  @just clean-venv
+  @just venv
   @just install
 
 # Generate locked requirements files based on dependencies in pyproject.toml
@@ -43,7 +47,7 @@ compile:
   cp requirements.txt requirements_dev.txt
   python3 -c 'import toml; print("\n".join(toml.load(open("pyproject.toml"))["dependency-groups"]["dev"]))' >> requirements_dev.txt
 
-_clean-compile:
+clean-compile:
   rm -f requirements.txt
   rm -f requirements_dev.txt
 
@@ -65,13 +69,14 @@ start *argv:
 
 # Format with black and isort
 format:
-  uv run black './plusdeck' ./tests
-  uv run isort --settings-file . './plusdeck' ./tests
+  uv run black './plusdeck' ./tests ./scripts
+  uv run isort --settings-file . './plusdeck' ./tests ./scripts
 
 # Lint with flake8
 lint:
-  uv run flake8 './plusdeck' ./tests
+  uv run flake8 './plusdeck' ./tests ./scripts
   uv run validate-pyproject ./pyproject.toml
+  shellcheck ./scripts/*.sh
 
 # Check type annotations with pyright
 check:
@@ -80,18 +85,18 @@ check:
 # Run tests with pytest
 test:
   uv run pytest -vvv ./tests
-  @just _clean-test
+  @just clean-test
 
 # Update snapshots
 snap:
   uv run pytest --snapshot-update ./tests
-  @just _clean-test
+  @just clean-test
 
 # Run integration tests (for what they are)
 integration:
   uv run python ./tests/integration.py
 
-_clean-test:
+clean-test:
   rm -f pytest_runner-*.egg
   rm -rf tests/__pycache__
 
@@ -100,7 +105,7 @@ tox:
   uv run tox
   @just _clean-tox
 
-_clean-tox:
+clean-tox:
   rm -rf .tox
 
 #
@@ -137,18 +142,95 @@ build-docs:
 build:
   uv build
 
-_clean-build:
+# Clean the build
+clean-build:
   rm -rf dist
 
-# Tag the release in git
-tag:
-  uv run git tag -a "$(python3 -c 'import toml; print(toml.load(open("pyproject.toml", "r"))["project"]["version"])')" -m "Release $(python3 -c 'import toml; print(toml.load(open("pyproject.toml", "r"))["project"]["version"])')"
+# Generate plusdeck.spec
+generate-spec:
+  ./scripts/generate-spec.sh "$(./scripts/version.py)" '{{ RELEASE }}'
 
-publish: build
-  uv publish
+# Update the package version in ./copr/python-plusdeck.yml
+copr-update-version:
+  VERSION="$(./scripts/version.py)" yq -i '.spec.packageversion = strenv(VERSION)' ./copr/python-plusdeck.yml
+
+# Commit generated files
+commit-generated-files:
+  git add requirements.txt
+  git add requirements_dev.txt
+  git add plusdeck.spec
+  git add ./copr
+  git commit -m 'Update generated files'
+
+# Fail if there are uncommitted files
+check-dirty:
+  ./scripts/is-dirty.sh
+
+# Fail if not on the main branch
+check-main-branch:
+  ./scripts/is-main-branch.sh
+
+# Tag the release with tito
+tag:
+  VERSION="$(./scripts/version.py)" tito tag --use-version "${VERSION}" --changelog="$(./scripts/changelog-entry.py "${VERSION}")"
+
+# Bundle the package for GitHub release
+bundle-release:
+  ./scripts/bundle.sh "$(./scripts/version.py)"
+
+# Clean up the release package
+clean-release:
+  rm -f "plusdeck-$(./scripts/version.py).tar.gz"
+
+# Push main and tags
+push:
+  git push origin main --follow-tags
+
+# Publish package to PyPI
+publish-pypi: build
+  uv publish -u __token__
+
+# Create a GitHub release
+gh-release:
+  bash ./scripts/release.sh "$(python ./scripts/get-version.py)" '{{ RELEASE }}'
+
+# Apply a COPR package configuration
+apply-copr package:
+  coprctl apply -f ./copr/{{ package }}.yml
+
+# Build a COPR package
+build-copr package:
+  copr build-package jfhbrook/joshiverse --name '{{ package }}'
+
+# Publish the release on PyPI, GitHub and Copr
+publish:
+  # Generate files and commit
+  @just compile
+  @just generate-spec
+  @just copr-update-version
+  @just commit-generated-files
+  # Ensure git is in a good state
+  @just check-main-branch
+  @just check-dirty
+  # Tag and push
+  @just tag
+  @just push
+  # Build package and bundle release
+  @just clean-build
+  @just clean-release
+  @just build
+  @just bundle-release
+  # Publish package and release
+  @just gh-release
+  @just publish-pypi
+  # Update packages on COPR
+  @just apply-copr python-plusdeck
+  @just apply-copr plusdeck
+  @just build-copr python-plusdeck
+  @just build-copr plusdeck
 
 # Clean up loose files
-clean: _clean-venv _clean-compile _clean-test _clean-tox
+clean: clean-venv clean-compile clean-test clean-build clean-release clean-tox
   rm -rf plusdeck.egg-info
   rm -f plusdeck/*.pyc
   rm -rf plusdeck/__pycache__

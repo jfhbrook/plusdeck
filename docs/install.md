@@ -6,9 +6,15 @@
 pip install plusdeck
 ```
 
+To install support for DBus, run:
+
+```sh
+pip install plusdeck[dbus]
+```
+
 In addition, I have a Fedora package on COPR, which can be installed like so:
 
 ```sh
 sudo dnf copr enable jfhbrook/joshiverse
-sudo dnf install python-plusdeck
+sudo dnf install plusdeck
 ```

@@ -8,7 +8,7 @@ version = "2.0.0"
 authors = [
   {name = "Josh Holbrook", email = "josh.holbrook@gmail.com"}
 ]
-description = "Serial client for Plus Deck 2C PC Cassette Deck"
+description = "Serial client and Linux service for Plus Deck 2C PC Cassette Deck"
 readme = "README.md"
 keywords = []
 license = { text = "MIT" }

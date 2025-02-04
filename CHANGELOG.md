@@ -4,6 +4,13 @@
   - `plusdeck.dbus.DbusClient` dbus client class
   - `plusdeckd` dbus service CLI
   - `plusdeckctl` dbus client CLI
+  - systemd unit for `plusdeckd`
+- `python-plusdeck` COPR package spec
+- `plusdeck` COPR package spec
+  - Depends on `python-plusdeck` COPR package
+  - Includes systemd unit for `plusdeckd`
+- Tito based release tagging
+- GitHub release tarball
 - Improved documentation
 
 2025/01/26 Version 2.0.0

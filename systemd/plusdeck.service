@@ -1,0 +1,9 @@
+[Unit]
+Description=Plus Deck 2C PC Cassette Deck
+
+[Service]
+Type=dbus
+BusName=org.jfhbrook.plusdeck
+ExecStart=/usr/bin/plusdeckd
+Restart=on-failure
+
