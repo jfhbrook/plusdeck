@@ -172,7 +172,7 @@ check-main-branch:
 
 # Tag the release with tito
 tag:
-  VERSION="$(./scripts/version.py)" tito tag --use-version "${VERSION}" --changelog="$(./scripts/changelog-entry.py "${VERSION}")"
+  export VERSION="$(./scripts/version.py)"; tito tag --use-version "${VERSION}" --changelog="$(./scripts/changelog-entry.py "${VERSION}")"
 
 # Bundle the package for GitHub release
 bundle-release:
