@@ -6,7 +6,7 @@
 pip install plusdeck
 ```
 
-To additionally install support for DBus, run:
+To install support for DBus, run:
 
 ```sh
 pip install plusdeck[dbus]
