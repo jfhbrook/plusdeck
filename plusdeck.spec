@@ -1,6 +1,6 @@
 Name: plusdeck
 Version: 3.0.0
-Release: 2
+Release: 3
 License: MPL-2.0
 Summary: Serial client and Linux service for Plus Deck 2C PC Cassette Deck
 
