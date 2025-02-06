@@ -33,6 +33,9 @@ install -p -D -m 0644 systemd/plusdeck.service %{buildroot}%{_prefix}/lib/system
 %{_prefix}/lib/systemd/system/plusdeck.service
 
 %changelog
+* Thu Feb 06 2025 Josh Holbrook <josh.holbrook@gmail.com> 3.0.0-3
+  - Fix install path of systemd unit
+
 * Tue Feb 04 2025 Josh Holbrook <josh.holbrook@gmail.com> 3.0.0-1
   - Remove `appdirs` dependency
   - dbus support:
