@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 
-VERSION="${1}"
+set -euo pipefail
 
-tar -czf "plusdeck-${VERSION}.tar.gz" \
+FULL_VERSION="${1}"
+
+tar -czf "plusdeck-${FULL_VERSION}.tar.gz" \
   CHANGELOG.md \
   LICENSE \
   Player.ipynb \

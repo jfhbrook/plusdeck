@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 
-VERSION="${1}"
-RELEASE="${2}"
+set -euo pipefail
 
-NOTES="$(./scripts/changelog-entry.py "${VERSION}")"
+FULL_VERSION="${1}"
 
-gh release create "plusdeck-${VERSION}-${RELEASE}" \
-  -t "plusdeck v${VERSION}" \
+NOTES="$(./scripts/changelog-entry.py "${FULL_VERSION}")"
+
+gh release create "plusdeck-${FULL_VERSION}" \
+  -t "plusdeck v${FULL_VERSION}" \
   -n "${NOTES}" \
-  "plusdeck-${VERSION}.tar.gz"
+  "plusdeck-${FULL_VERSION}.tar.gz"

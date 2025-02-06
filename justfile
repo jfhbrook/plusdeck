@@ -171,12 +171,12 @@ tag:
   ./scripts/tag.sh
 
 # Bundle the package for GitHub release
-bundle-release:
-  ./scripts/bundle.sh "$(./scripts/version.py)"
+bundle-gh-release:
+  ./scripts/bundle-gh-release.sh "$(./scripts/version.py)-$(./scripts/release-version.py)"
 
 # Clean up the release package
 clean-release:
-  rm -f "plusdeck-$(./scripts/version.py).tar.gz"
+  rm -f "plusdeck-*-*.tar.gz"
 
 # Push main and tags
 push:
@@ -188,7 +188,7 @@ publish-pypi: build
 
 # Create a GitHub release
 gh-release:
-  bash ./scripts/release.sh "$(python ./scripts/version.py)" "$(python ./scripts/release-version.py)"
+  bash ./scripts/gh-release.sh "$(python ./scripts/version.py)-$(python ./scripts/release-version.py)"
 
 # Apply a COPR package configuration
 apply-copr package:
@@ -215,7 +215,7 @@ publish:
   if [[ "$(./scripts/release-version.py)" == '1' ]]; then just clean-build; fi
   @just clean-release
   if [[ "$(./scripts/release-version.py)" == '1' ]]; then just build; fi
-  @just bundle-release
+  @just bundle-gh-release
   # Publish package and release
   @just gh-release
   if [[ "$(./scripts/release-version.py)" == '1' ]]; then just publish-pypi; fi
