@@ -1,5 +1,9 @@
-2025/02/04 Version 3.0.0
-------------------------
+2025/02/04 Version 3.0.0-2
+--------------------------
+- Fix install path of systemd unit
+
+2025/02/04 Version 3.0.0-1
+--------------------------
 - Remove `appdirs` dependency
 - dbus support:
   - `plusdeck.dbus.DbusInterface` dbus Interface class

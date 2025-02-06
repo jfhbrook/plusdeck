@@ -3,9 +3,10 @@
 import re
 import sys
 
-VERSION = sys.argv[1]
+FULL_VERSION = sys.argv[1]
+VERSION, RELEASE = FULL_VERSION.split("-")
 
-TITLE_RE = r"\d{4}\/\d{2}\/\d{2} Version (\d+\.\d+\.\d+)"
+TITLE_RE = r"\d{4}\/\d{2}\/\d{2} Version (\d+\.\d+\.\d+)\-?(\d+)?"
 
 found = False
 changelog = ""
@@ -16,10 +17,11 @@ with open("CHANGELOG.md", "r") as f:
         while True:
             line = next(it)
             m = re.findall(TITLE_RE, line)
-            if not found and m and m[0] == VERSION:
+            if not found and m and m[0][0] == VERSION and m[0][1] == RELEASE:
                 found = True
-                changelog += line
-            elif m:
+                # Consume ---- line
+                next(it)
+            elif found and m:
                 # Found next entry
                 break
             elif found:
@@ -30,6 +32,6 @@ with open("CHANGELOG.md", "r") as f:
         pass
 
 if not found:
-    raise Exception(f"Could not find changelog entry for {VERSION}")
+    raise Exception(f"Could not find changelog entry for {FULL_VERSION}")
 
 print(changelog.strip())

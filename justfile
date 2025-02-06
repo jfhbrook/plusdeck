@@ -168,7 +168,7 @@ check-main-branch:
 
 # Tag the release with tito
 tag:
-  export VERSION="$(./scripts/version.py)"; tito tag --use-version "${VERSION}" --changelog="$(./scripts/changelog-entry.py "${VERSION}")"
+  ./scripts/tag.sh
 
 # Bundle the package for GitHub release
 bundle-release:
