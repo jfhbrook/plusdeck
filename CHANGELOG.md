@@ -1,4 +1,4 @@
-2025/02/04 Version 3.0.0-2
+2025/02/04 Version 3.0.0-3
 --------------------------
 - Fix install path of systemd unit
 
