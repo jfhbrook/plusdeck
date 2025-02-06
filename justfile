@@ -212,17 +212,17 @@ publish:
   @just tag
   @just push
   # Build package and bundle release
-  @just clean-build
+  if [[ "$(./scripts/release-version.py)" == '1' ]]; then just clean-build; fi
   @just clean-release
-  @just build
+  if [[ "$(./scripts/release-version.py)" == '1' ]]; then just build; fi
   @just bundle-release
   # Publish package and release
   @just gh-release
-  @just publish-pypi
+  if [[ "$(./scripts/release-version.py)" == '1' ]]; then just publish-pypi; fi
   # Update packages on COPR
-  @just apply-copr python-plusdeck
+  if [[ "$(./scripts/release-version.py)" == '1' ]]; then just apply-copr python-plusdeck; fi
   @just apply-copr plusdeck
-  @just build-copr python-plusdeck
+  if [[ "$(./scripts/release-version.y)" == '1' ]]; then just build-copr python-plusdeck; fi
   @just build-copr plusdeck
 
 # Clean up loose files
