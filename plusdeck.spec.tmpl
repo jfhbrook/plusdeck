@@ -22,14 +22,14 @@ tar -xzf %{SOURCE0}
 
 
 %install
-mkdir -p %{buildroot}%{_prefix}/lib/systemd/system
-install -p -m 644 systemd/plusdeck.service %{buildroot}%{_prefix}/lib/systemd/system
+mkdir -p %{buildroot}%{_unitdir}
+install -p -D -m 0644 systemd/plusdeck.service %{buildroot}%{_unitdir}/plusdeck.service
 
 
 %check
 
 
 %files
-%{_prefix}/lib/systemd/system/plusdeck.service
+%{_unitdir}/plusdeck.service
 
 %changelog
