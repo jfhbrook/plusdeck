@@ -33,5 +33,8 @@ install -p -D -m 0644 systemd/plusdeck.service %{buildroot}%{_prefix}/lib/system
 %{_prefix}/lib/systemd/system/plusdeck.service
 
 %changelog
+* Thu Feb 06 2025 Josh Holbrook <josh.holbrook@gmail.com>
+  - Fix install path of systemd unit
+
 * Thu Feb 06 2025 Josh Holbrook <josh.holbrook@gmail.com> 3.0.0-2
   - Fix install path of systemd unit
