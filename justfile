@@ -104,6 +104,11 @@ tox:
 clean-tox:
   rm -rf .tox
 
+# Install systemd service files for development purposes
+install-service:
+  sudo install -p -D -m 0644 systemd/plusdeck.service /usr/lib/systemd/system/plusdeck.service
+  sudo install -p -D -m 0644 systemd/org.jfhbrook.plusdeck.conf /etc/dbus-1/system.d/org.jfhbrook.plusdeck.conf
+
 #
 # Shell and console
 #
@@ -125,10 +130,6 @@ docs:
 # Build the documentation
 build-docs:
   uv run mkdocs build
-
-#
-# Package publishing
-#
 
 #
 # Package publishing
