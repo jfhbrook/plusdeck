@@ -24,6 +24,7 @@ tar -xzf %{SOURCE0}
 %install
 mkdir -p %{buildroot}%{_prefix}/lib/systemd/system
 install -p -D -m 0644 systemd/plusdeck.service %{buildroot}%{_prefix}/lib/systemd/system/plusdeck.service
+install -p -D -m 0644 systemd/org.jfhbrook.plusdeck.conf /etc/dbus-1/system.d/org.jfhbrook.plusdeck.conf
 
 
 %check
@@ -31,6 +32,7 @@ install -p -D -m 0644 systemd/plusdeck.service %{buildroot}%{_prefix}/lib/system
 
 %files
 %{_prefix}/lib/systemd/system/plusdeck.service
+%{_prefix}/etc/dbus-1/system.d/org.jfhbrook.plusdeck.conf
 
 %changelog
 {{ .Env.CHANGELOG }}
