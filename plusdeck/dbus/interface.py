@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 DBUS_NAME = "org.jfhbrook.plusdeck"
 
 
-async def load_client(config_file: str) -> Client:
+async def load_client(config_file: Optional[str]) -> Client:
     config: Config = Config.from_file(config_file)
 
     client = await create_connection(config.port)
@@ -33,7 +33,7 @@ class DbusInterface(  # type: ignore
     A DBus interface for controlling the Plus Deck 2C PC Cassette Deck.
     """
 
-    def __init__(self: Self, config_file: str, client: Client) -> None:
+    def __init__(self: Self, client: Client, config_file: Optional[str] = None) -> None:
         super().__init__()
         self._config: Config = Config.from_file(config_file)
         self.client: Client = client

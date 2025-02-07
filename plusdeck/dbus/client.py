@@ -31,7 +31,7 @@ class DbusClient(DbusInterface):
     def __init__(self: Self, bus: Optional[SdBus] = None) -> None:
         client = Mock(name="client", side_effect=NotImplementedError("client"))
         self.subscribe = Mock(name="client.subscribe")
-        super().__init__("", client)
+        super().__init__(client)
 
         cast(Any, self)._proxify(DBUS_NAME, "/", bus=bus)
 

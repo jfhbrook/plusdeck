@@ -2,6 +2,7 @@
 --------------------------
 - `plusdeckctl` connects to the system bus by default
 - `plusdeckctl --user` will connect to the user bus
+- `plusdeckd` loads local config by default unless run as root
 
 2025/02/04 Version 3.0.0-3
 --------------------------
