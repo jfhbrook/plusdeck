@@ -9,6 +9,7 @@ Source0: %{name}-%{version}.tar.gz
 BuildArch: noarch
 
 Requires: python-plusdeck
+Requires: python-sdbus
 
 %description
 
@@ -24,7 +25,7 @@ tar -xzf %{SOURCE0}
 %install
 mkdir -p %{buildroot}%{_prefix}/lib/systemd/system
 install -p -D -m 0644 systemd/plusdeck.service %{buildroot}%{_prefix}/lib/systemd/system/plusdeck.service
-install -p -D -m 0644 systemd/org.jfhbrook.plusdeck.conf /etc/dbus-1/system.d/org.jfhbrook.plusdeck.conf
+install -p -D -m 0644 dbus/org.jfhbrook.plusdeck.conf /etc/dbus-1/system.d/org.jfhbrook.plusdeck.conf
 
 
 %check
