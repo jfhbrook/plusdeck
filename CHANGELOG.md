@@ -1,3 +1,8 @@
+2025/02/06 Version 4.0.0-1
+--------------------------
+- `plusdeckctl` connects to the system bus by default
+- `plusdeckctl --user` will connect to the user bus
+
 2025/02/04 Version 3.0.0-3
 --------------------------
 - Fix install path of systemd unit
