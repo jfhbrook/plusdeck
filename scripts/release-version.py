@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-import toml
+import tomllib
 
-with open("pyproject.toml", "r") as f:
-    project = toml.load(f)
+with open("pyproject.toml", "rb") as f:
+    project = tomllib.load(f)
 
     print(project["tool"]["rpm"]["release"])
