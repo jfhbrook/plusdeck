@@ -107,7 +107,7 @@ clean-tox:
 # Install systemd service files for development purposes
 install-service:
   sudo install -p -D -m 0644 systemd/plusdeck.service /usr/lib/systemd/system/plusdeck.service
-  sudo install -p -D -m 0644 systemd/org.jfhbrook.plusdeck.conf /etc/dbus-1/system.d/org.jfhbrook.plusdeck.conf
+  sudo install -p -D -m 0644 dbus/org.jfhbrook.plusdeck.conf /etc/dbus-1/system.d/org.jfhbrook.plusdeck.conf
 
 #
 # Shell and console
