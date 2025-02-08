@@ -35,6 +35,17 @@ install -p -D -m 0644 dbus/org.jfhbrook.plusdeck.conf %{buildroot}%{_prefix}/sha
 %{_prefix}/share/dbus-1/system.d/org.jfhbrook.plusdeck.conf
 
 %changelog
+* Sat Feb 08 2025 Josh Holbrook <josh.holbrook@gmail.com> 4.0.0-1
+  - `plusdeckctl` connects to the system bus by default
+  - `plusdeckctl --user` will connect to the user bus
+  - `plusdeckd` loads local config by default unless run as root
+  - systemd unit fixes
+    - Requires `dbus.socket`, starts after `dbus.socket`
+    - Wanted by `multiuser.target`
+  - dbus access policy
+    - Ownership and allowed destination for root
+    - Allowed destination for `plusdeck` user
+
 * Thu Feb 06 2025 Josh Holbrook <josh.holbrook@gmail.com> 3.0.0-3
   - Fix install path of systemd unit
 
