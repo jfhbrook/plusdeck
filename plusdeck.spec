@@ -1,6 +1,6 @@
 Name: plusdeck
-Version: 3.0.0
-Release: 3
+Version: 4.0.0
+Release: 1
 License: MPL-2.0
 Summary: Serial client and Linux service for Plus Deck 2C PC Cassette Deck
 
@@ -9,6 +9,7 @@ Source0: %{name}-%{version}.tar.gz
 BuildArch: noarch
 
 Requires: python-plusdeck
+Requires: python-sdbus
 
 %description
 
@@ -24,13 +25,14 @@ tar -xzf %{SOURCE0}
 %install
 mkdir -p %{buildroot}%{_prefix}/lib/systemd/system
 install -p -D -m 0644 systemd/plusdeck.service %{buildroot}%{_prefix}/lib/systemd/system/plusdeck.service
-
+install -p -D -m 0644 dbus/org.jfhbrook.plusdeck.conf %{buildroot}%{_prefix}/share/dbus-1/system.d/org.jfhbrook.plusdeck.conf
 
 %check
 
 
 %files
 %{_prefix}/lib/systemd/system/plusdeck.service
+%{_prefix}/share/dbus-1/system.d/org.jfhbrook.plusdeck.conf
 
 %changelog
 * Thu Feb 06 2025 Josh Holbrook <josh.holbrook@gmail.com> 3.0.0-3
