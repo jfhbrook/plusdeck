@@ -3,6 +3,12 @@
 - `plusdeckctl` connects to the system bus by default
 - `plusdeckctl --user` will connect to the user bus
 - `plusdeckd` loads local config by default unless run as root
+- systemd unit fixes
+  - Requires `dbus.socket`, starts after `dbus.socket`
+  - Wanted by `multiuser.target`
+- dbus access policy
+  - Ownership and allowed destination for root
+  - Allowed destination for `plusdeck` user
 
 2025/02/04 Version 3.0.0-3
 --------------------------
