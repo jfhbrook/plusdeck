@@ -3,11 +3,11 @@
 <policyconfig>
   <vendor>plusdeck</vendor>
   <vendor_url>https://github.com/jfhbrook/plusdeck</vendor_url>
-  <icon_name>nm-icon</icon_name>
   <action id="org.jfhbrook.plusdeck.Eject">
     <message>Polkit no allow eject tho</message>
     <defaults>
-      <allow_inactive>no</allow_inactive>
+      <allow_any>yes</allow_any>
+      <allow_inactive>yes</allow_inactive>
       <allow_active>yes</allow_active>
     </defaults>
   </action>
