@@ -111,6 +111,22 @@ The best tool for debugging Dbus seems to be [dbus-monitor](https://dbus.freedes
 sudo dbus-monitor --system
 ```
 
+### Viewing Dbus Logs
+
+You can review recent logs by checking the status of the `dbus` unit:
+
+```sh
+sudo systemctl status dbus
+```
+
+### Viewing the Dbus Interface
+
+I have a just task for that:
+
+```sh
+just get-dbus-iface
+```
+
 ### Debugging SELinux
 
 You should be able to see access denials due to SELinux by running either:

@@ -109,8 +109,13 @@ install-service:
   sudo install -p -D -m 0644 systemd/plusdeck.service /usr/lib/systemd/system/plusdeck.service
   sudo install -p -D -m 0644 dbus/org.jfhbrook.plusdeck.conf /usr/share/dbus-1/system.d/org.jfhbrook.plusdeck.conf
 
+# Pull the plusdeck service's logs with journalctl
 service-logs:
   journalctl -xeu plusdeck.service
+
+# Fetch the dbus interface for the live service from dbus
+get-dbus-iface:
+  ./scripts/get-dbus-iface.sh
 
 #
 # Shell and console
