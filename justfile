@@ -239,7 +239,7 @@ publish:
   # Update packages on COPR
   if [[ "$(./scripts/release-version.py)" == '1' ]]; then just apply-copr python-plusdeck; fi
   @just apply-copr plusdeck
-  if [[ "$(./scripts/release-version.y)" == '1' ]]; then just build-copr python-plusdeck; fi
+  if [[ "$(./scripts/release-version.py)" == '1' ]]; then just build-copr python-plusdeck; fi
   @just build-copr plusdeck
 
 # Clean up loose files
