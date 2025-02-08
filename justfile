@@ -108,6 +108,8 @@ clean-tox:
 install-service:
   sudo install -p -D -m 0644 systemd/plusdeck.service /usr/lib/systemd/system/plusdeck.service
   sudo install -p -D -m 0644 dbus/org.jfhbrook.plusdeck.conf /usr/share/dbus-1/system.d/org.jfhbrook.plusdeck.conf
+  sudo install -p -D -m 0644 polkit/org.jfhbrook.plusdeck.policy /usr/share/polkit-1/actions/org.jfhbrook.plusdeck.policy
+  sudo install -p -D -m 0644 polkit/org.jfhbrook.plusdeck.rules /usr/share/polkit-1/rules.d/org.jfhbrook.plusdeck.rules
 
 # Pull the plusdeck service's logs with journalctl
 service-logs:

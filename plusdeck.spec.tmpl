@@ -25,7 +25,9 @@ tar -xzf %{SOURCE0}
 %install
 mkdir -p %{buildroot}%{_prefix}/lib/systemd/system
 install -p -D -m 0644 systemd/plusdeck.service %{buildroot}%{_prefix}/lib/systemd/system/plusdeck.service
-install -p -D -m 0644 dbus/org.jfhbrook.plusdeck.conf %{buildroot}${_prefix}/share/dbus-1/system.d/org.jfhbrook.plusdeck.conf
+install -p -D -m 0644 dbus/org.jfhbrook.plusdeck.conf %{buildroot}%{_prefix}/share/dbus-1/system.d/org.jfhbrook.plusdeck.conf
+install -p -D -m 0644 polkit/org.jfhbrook.plusdeck.policy %{buildroot}%{_prefix}/share/polkit-1/actions/org.jfhbrook.plusdeck.policy
+install -p -D -m 0644 polkit/org.jfhbrook.plusdeck.rules %{buildroot}%{_prefix}/share/polkit-1/rules.d/org.jfhbrook.plusdeck.rules
 
 
 %check
@@ -34,6 +36,8 @@ install -p -D -m 0644 dbus/org.jfhbrook.plusdeck.conf %{buildroot}${_prefix}/sha
 %files
 %{_prefix}/lib/systemd/system/plusdeck.service
 %{_prefix}/share/dbus-1/system.d/org.jfhbrook.plusdeck.conf
+%{_prefix}/share/polkit-1/actions/org.jfhbrook.plusdeck.policy
+%{_prefix}/share/polkit-1/rules.d/org.jfhbrook.plusdeck.rules
 
 %changelog
 {{ .Env.CHANGELOG }}
