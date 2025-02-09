@@ -1,3 +1,7 @@
+yyyy/mm/dd Version 4.0.1-1
+--------------------------
+- Dbus methods now marked as unprivileged
+
 2025/02/06 Version 4.0.0-1
 --------------------------
 - `plusdeckctl` connects to the system bus by default
