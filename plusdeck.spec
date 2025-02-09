@@ -35,6 +35,10 @@ install -p -D -m 0644 dbus/org.jfhbrook.plusdeck.conf %{buildroot}%{_prefix}/sha
 %{_prefix}/share/dbus-1/system.d/org.jfhbrook.plusdeck.conf
 
 %changelog
+* Sun Feb 09 2025 Josh Holbrook <josh.holbrook@gmail.com> 4.0.1-1
+- Dbus methods now marked as unprivileged
+- sdbus library errors have improved logging
+
 * Sat Feb 08 2025 Josh Holbrook <josh.holbrook@gmail.com> 4.0.0-1
   - `plusdeckctl` connects to the system bus by default
   - `plusdeckctl --user` will connect to the user bus
