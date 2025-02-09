@@ -10,6 +10,7 @@ from sdbus import (  # pyright: ignore [reportMissingModuleSource]
 
 from plusdeck.cli import LogLevel
 from plusdeck.config import GLOBAL_FILE
+from plusdeck.dbus.error import handle_dbus_error
 from plusdeck.dbus.interface import DBUS_NAME, DbusInterface, load_client
 
 logger = logging.getLogger(__name__)
@@ -40,9 +41,10 @@ async def serve(config_file: Optional[str] = None) -> None:
     Create and serve configure DBus service with a supplied config file.
     """
 
-    srv = await service(config_file)
+    async with handle_dbus_error(logger):
+        srv = await service(config_file)
 
-    await srv.closed
+        await srv.closed
 
 
 @click.command
