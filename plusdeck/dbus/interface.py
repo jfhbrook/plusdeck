@@ -7,6 +7,7 @@ from sdbus import (  # pyright: ignore [reportMissingModuleSource]
     dbus_property_async,
     dbus_signal_async,
     DbusInterfaceCommonAsync,
+    DbusUnprivilegedFlag,
 )
 
 from plusdeck.client import Client, create_connection, Receiver, State
@@ -88,14 +89,14 @@ class DbusInterface(  # type: ignore
 
         return self.client.closed
 
-    @dbus_method_async("")
+    @dbus_method_async("", flags=DbusUnprivilegedFlag)
     async def play_a(self: Self) -> None:
         """
         Play side A.
         """
         self.client.play_a()
 
-    @dbus_method_async("")
+    @dbus_method_async("", flags=DbusUnprivilegedFlag)
     async def play_b(self: Self) -> None:
         """
         Play side B.
@@ -103,7 +104,7 @@ class DbusInterface(  # type: ignore
 
         self.client.play_b()
 
-    @dbus_method_async("")
+    @dbus_method_async("", flags=DbusUnprivilegedFlag)
     async def fast_forward_a(self: Self) -> None:
         """
         Fast-forward side A.
@@ -111,7 +112,7 @@ class DbusInterface(  # type: ignore
 
         self.client.fast_forward_a()
 
-    @dbus_method_async("")
+    @dbus_method_async("", flags=DbusUnprivilegedFlag)
     async def fast_forward_b(self: Self) -> None:
         """
         Fast-forward side B.
@@ -119,7 +120,7 @@ class DbusInterface(  # type: ignore
 
         self.client.fast_forward_b()
 
-    @dbus_method_async("")
+    @dbus_method_async("", flags=DbusUnprivilegedFlag)
     async def rewind_a(self: Self) -> None:
         """
         Rewind side A. Equivalent to fast-forwarding side B.
@@ -127,7 +128,7 @@ class DbusInterface(  # type: ignore
 
         self.client.rewind_a()
 
-    @dbus_method_async("")
+    @dbus_method_async("", flags=DbusUnprivilegedFlag)
     async def rewind_b(self: Self) -> None:
         """
         Rewind side B. Equivalent to fast-forwarding side A.
@@ -135,7 +136,7 @@ class DbusInterface(  # type: ignore
 
         self.client.rewind_b()
 
-    @dbus_method_async("")
+    @dbus_method_async("", flags=DbusUnprivilegedFlag)
     async def pause(self: Self) -> None:
         """
         Pause if playing, or start playing if paused.
@@ -143,7 +144,7 @@ class DbusInterface(  # type: ignore
 
         self.client.pause()
 
-    @dbus_method_async("")
+    @dbus_method_async("", flags=DbusUnprivilegedFlag)
     async def stop(self: Self) -> None:
         """
         Stop the tape.
@@ -151,7 +152,7 @@ class DbusInterface(  # type: ignore
 
         self.client.stop()
 
-    @dbus_method_async("")
+    @dbus_method_async("", flags=DbusUnprivilegedFlag)
     async def eject(self: Self) -> None:
         """
         Eject the tape.
@@ -159,7 +160,7 @@ class DbusInterface(  # type: ignore
 
         self.client.eject()
 
-    @dbus_method_async("sd", "b")
+    @dbus_method_async("sd", "b", flags=DbusUnprivilegedFlag)
     async def wait_for(self: Self, state: str, timeout: float) -> bool:
         """
         Wait for an expected state, with an optional timeout. When timeout is negative,

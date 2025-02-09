@@ -53,8 +53,6 @@ The interface is similar to the vanilla `plusdeck` CLI. However, there are a few
 
 ## Dbus Access Policies
 
-**NOTE: Full access for `plusdeck` group access is an area of active development. This feature does not work - at least, on Fedora.** To follow along, view [this StackExchange post](https://unix.stackexchange.com/questions/790750/dbus-policy-that-allows-group-to-access-system-service). and this [Fedora discussion post](https://discussion.fedoraproject.org/t/dbus-policy-that-allows-group-to-access-system-service/144265).
-
 When running services under the `system` bus, care must be taken to manage access policies. Dbus does this primarily with [an XML-based policy language](https://dbus.freedesktop.org/doc/dbus-daemon.1.html). Systemd additionally manages access to privileged methods, seemingly with the intent of delegating to polkit.
 
 By default, Dbus is configured with the following policies:
@@ -68,12 +66,6 @@ This means that, if the service is running, `sudo plusdeckctl` commands should a
 sudo groupadd plusdeck
 sudo usermod -a -G plusdeck "${USER}"
 ```
-
-### Polkit
-
-**NOTE: The Polkit policies have not been shown to work at this time.**
-
-Prototype Polkit policies/rules may be found in the `./polkit` folder.
 
 ## Running `plusdeckd` Directly
 
@@ -122,20 +114,4 @@ I have a just task for that:
 
 ```sh
 just get-dbus-iface
-```
-
-### Debugging SELinux
-
-While I haven't seen this to be the case, it seems theoretically possible for SELinux to block access to Dbus.
-
-You should be able to see access denials due to SELinux by running either:
-
-```sh
-sudo ausearch -ts recent
-```
-
-or:
-
-```sh
-sudo tail -f /var/log/audit/audit.log
 ```

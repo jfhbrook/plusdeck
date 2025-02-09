@@ -18,6 +18,7 @@ from plusdeck.cli import async_command, AsyncCommand, echo, LogLevel, OutputMode
 from plusdeck.client import State
 from plusdeck.config import Config
 from plusdeck.dbus.config import StagedConfig
+from plusdeck.dbus.error import handle_dbus_error
 from plusdeck.dbus.interface import DBUS_NAME, DbusInterface
 
 logger = logging.getLogger(__name__)
@@ -72,18 +73,8 @@ def pass_client(fn: AsyncCommand) -> AsyncCommand:
     @click.pass_obj
     @functools.wraps(fn)
     async def wrapped(obj: Obj, *args, **kwargs) -> None:
-        try:
+        async with handle_dbus_error(logger):
             await fn(obj.client, *args, **kwargs)
-        except Exception as exc:
-            if hasattr(exc, "dbus_error_name"):
-                dbus_error_name = cast(Any, exc).dbus_error_name
-                dbus_msg = str(exc)
-                if dbus_msg:
-                    logger.error(f"{dbus_error_name}: {dbus_msg}")
-                else:
-                    logger.error(f"{dbus_error_name}")
-                sys.exit(1)
-            raise
 
     return wrapped
 
