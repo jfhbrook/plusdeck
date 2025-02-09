@@ -1,6 +1,7 @@
 yyyy/mm/dd Version 4.0.1-1
 --------------------------
 - Dbus methods now marked as unprivileged
+- sdbus library errors have improved logging
 
 2025/02/06 Version 4.0.0-1
 --------------------------
