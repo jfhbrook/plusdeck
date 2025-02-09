@@ -26,6 +26,6 @@ with open("plusdeck.spec", "r") as f:
         pass
 
 if not found:
-    raise Exception(f"Could not find changelog in plusdeck.spec")
+    raise Exception("Could not find changelog in plusdeck.spec")
 
 print(changelog.strip())
