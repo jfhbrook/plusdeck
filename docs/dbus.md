@@ -53,8 +53,6 @@ The interface is similar to the vanilla `plusdeck` CLI. However, there are a few
 
 ## Dbus Access Policies
 
-**NOTE: Full access for `plusdeck` group access is an area of active development. This feature may not work - at least, on Fedora.** To follow along, view [this StackExchange post](https://unix.stackexchange.com/questions/790750/dbus-policy-that-allows-group-to-access-system-service). and this [Fedora discussion post](https://discussion.fedoraproject.org/t/dbus-policy-that-allows-group-to-access-system-service/144265).
-
 When running services under the `system` bus, care must be taken to manage access policies. Dbus does this primarily with [an XML-based policy language](https://dbus.freedesktop.org/doc/dbus-daemon.1.html). Systemd additionally manages access to privileged methods, seemingly with the intent of delegating to polkit.
 
 By default, Dbus is configured with the following policies:
