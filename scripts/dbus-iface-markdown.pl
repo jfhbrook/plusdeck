@@ -26,6 +26,7 @@ OPTIONS:
   --iface IFACE  Dbus interface to document
   --out FILE     File to write output to (defaults to stdout)
   --system       Connect to the system bus
+  --title        An optional document title
 ';
 
 my $help = '';
@@ -33,6 +34,7 @@ my $dest;
 my $iface_name;
 my $file   = '';
 my $out    = \*STDOUT;
+my $title  = '';
 my $system = '';
 
 GetOptions(
@@ -40,7 +42,8 @@ GetOptions(
     "dest=s",  => \$dest,
     "iface=s", => \$iface_name,
     "out=s"    => \$file,
-    "system",  => \$system
+    "system",  => \$system,
+    "title=s", => \$title
 ) or die($HELP);
 
 my $path = "/";
@@ -69,12 +72,11 @@ sub extract_response {
     join "\n", @res;
 }
 
-my $cmd = "dbus-send --system \\
+my $raw = `dbus-send --system \\
   --dest=$dest '$path' \\
   --print-reply \\
-  org.freedesktop.DBus.Introspectable.Introspect";
+  org.freedesktop.DBus.Introspectable.Introspect`;
 
-my $raw = `$cmd`;
 my $res = &extract_response($raw);
 
 my $parser = XML::Parser->new( Style => 'Tree' );
@@ -85,6 +87,9 @@ my $bus    = $parser->parse($res);
 close $out;
 
 sub process_bus {
+    if ($title) {
+        print $out "# $title\n\n";
+    }
     while (@_) {
         my $child = shift;
         if ( $child eq 'interface' ) {
