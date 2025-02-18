@@ -155,19 +155,24 @@ sub process_method {
         }
     }
 
-    print_annotations(@anns);
-
     if (@args) {
         print $out '**Arguments:** ';
         print $out join( ", ", @args ) . "\n";
     }
     print $out "**Returns: $ret\n\n";
+
+    print_annotations(@anns);
 }
 
 sub process_property {
     my %props = %{ shift @_ };
     print $out "### Property: $props{'name'}\n\n";
+    my $type   = $props{'type'};
+    my $access = $props{'access'};
     my @anns;
+
+    print $out "**type:** $type\n";
+    print $out "**access:** $access\n";
 
     while (@_) {
         my $child = shift;
@@ -182,6 +187,10 @@ sub process_property {
         else {
             print $out Dumper($child);
         }
+    }
+
+    if (@anns) {
+        print $out "\n";
     }
 
     print_annotations(@anns);
