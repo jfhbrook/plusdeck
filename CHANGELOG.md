@@ -1,3 +1,7 @@
+yyyy/mm/dd Version x.y.z
+------------------------
+- Include generated DBus interface docs
+
 2025/02/09 Version 4.0.1-1
 --------------------------
 - Dbus methods now marked as unprivileged
