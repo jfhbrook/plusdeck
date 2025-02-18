@@ -67,6 +67,7 @@ start *argv:
 format:
   uv run black './plusdeck' ./tests ./scripts
   uv run isort --settings-file . './plusdeck' ./tests ./scripts
+  if which perltidy > /dev/null; then perltidy -b -bext='/' scripts/*.pl; fi
 
 # Lint with flake8
 lint:
@@ -113,9 +114,9 @@ install-service:
 service-logs:
   journalctl -xeu plusdeck.service
 
-# Fetch the dbus interface for the live service from dbus
-get-dbus-iface:
-  ./scripts/get-dbus-iface.sh
+# Display markdown documentation based on the live service from dbus
+dbus-iface-markdown:
+  ./scripts/dbus-iface-markdown.pl
 
 #
 # Shell and console
