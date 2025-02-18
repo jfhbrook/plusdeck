@@ -149,7 +149,7 @@ sub process_iface {
             &process_signal( @{ shift @_ } );
         }
         else {
-            print $out Dumper($child);
+            &dump($child);
         }
     }
 }
@@ -177,7 +177,7 @@ sub process_method {
                 $ret = $props{'type'};
             }
             else {
-                print $out Dumper(%props);
+                &dump($child);
             }
         }
         elsif ( $child eq 'annotation' ) {
@@ -185,7 +185,7 @@ sub process_method {
             push @anns, $ann;
         }
         else {
-            print $out Dumper($child);
+            &dump($child);
         }
     }
 
@@ -220,7 +220,7 @@ sub process_property {
             push @anns, $ann;
         }
         else {
-            print $out Dumper($child);
+            &dump($child);
         }
     }
 
@@ -253,7 +253,7 @@ sub process_signal {
             push @anns, $ann;
         }
         else {
-            print $out Dumper($child);
+            &dump($child);
         }
     }
 
@@ -276,4 +276,12 @@ sub print_annotations {
         print $out "$_\n";
     }
     print $out "\n";
+}
+
+sub dump {
+    my $obj = shift;
+
+    print $out "\n```\n";
+    print $out Dumper($obj);
+    print $out "```\n\n";
 }
