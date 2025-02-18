@@ -1,61 +1,67 @@
-# Dbus Interface
+# org.jfhbrook.plusdeck (/)
 
-## org.jfhbrook.plusdeck
+## Interface: org.jfhbrook.plusdeck
 
 ### Method: Eject
 
-**Returns: void
+**Returns:** `void`
 
 ### Method: FastForwardA
 
-**Returns: void
+**Returns:** `void`
 
 ### Method: FastForwardB
 
-**Returns: void
+**Returns:** `void`
 
 ### Method: Pause
 
-**Returns: void
+**Returns:** `void`
 
 ### Method: PlayA
 
-**Returns: void
+**Returns:** `void`
 
 ### Method: PlayB
 
-**Returns: void
+**Returns:** `void`
 
 ### Method: RewindA
 
-**Returns: void
+**Returns:** `void`
 
 ### Method: RewindB
 
-**Returns: void
+**Returns:** `void`
 
 ### Method: Stop
 
-**Returns: void
+**Returns:** `void`
 
 ### Method: WaitFor
 
-**Arguments:** s, d
-**Returns: b
+**Arguments:** `s`, `d`
+**Returns:** `b`
 
 ### Property: Config
 
+**Type:** `(ss)`
+**Access:** `read`
+
 **Annotations:**
 
-- org.freedesktop.DBus.Property.EmitsChangedSignal: false
+- org.freedesktop.DBus.Property.EmitsChangedSignal: `false`
 
 ### Property: CurrentState
 
+**Type:** `s`
+**Access:** `read`
+
 **Annotations:**
 
-- org.freedesktop.DBus.Property.EmitsChangedSignal: false
+- org.freedesktop.DBus.Property.EmitsChangedSignal: `false`
 
 ### Signal: State
 
-**Type: s
+**Type**: `s`
 

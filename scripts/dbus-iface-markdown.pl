@@ -157,9 +157,9 @@ sub process_method {
 
     if (@args) {
         print $out '**Arguments:** ';
-        print $out join( ", ", @args ) . "\n";
+        print $out join( ", ", map { "`$_`" } @args ) . "\n";
     }
-    print $out "**Returns: $ret\n\n";
+    print $out "**Returns:** `$ret`\n\n";
 
     print_annotations(@anns);
 }
@@ -171,8 +171,8 @@ sub process_property {
     my $access = $props{'access'};
     my @anns;
 
-    print $out "**type:** $type\n";
-    print $out "**access:** $access\n";
+    print $out "**Type:** `$type`\n";
+    print $out "**Access:** `$access`\n";
 
     while (@_) {
         my $child = shift;
@@ -223,12 +223,12 @@ sub process_signal {
     }
 
     print_annotations(@anns);
-    print $out "**Type: $type\n\n";
+    print $out "**Type**: `$type`\n\n";
 }
 
 sub process_annotation {
     my %props = %{ shift @_ };
-    "- $props{'name'}: $props{'value'}";
+    "- $props{'name'}: `$props{'value'}`";
 }
 
 sub print_annotations {
