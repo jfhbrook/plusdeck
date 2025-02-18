@@ -41,11 +41,13 @@
 ### Method: WaitFor
 
 **Arguments:** `s`, `d`
+
 **Returns:** `b`
 
 ### Property: Config
 
 **Type:** `(ss)`
+
 **Access:** `read`
 
 **Annotations:**
@@ -55,6 +57,7 @@
 ### Property: CurrentState
 
 **Type:** `s`
+
 **Access:** `read`
 
 **Annotations:**

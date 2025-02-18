@@ -158,6 +158,7 @@ sub process_method {
     if (@args) {
         print $out '**Arguments:** ';
         print $out join( ", ", map { "`$_`" } @args ) . "\n";
+        print $out "\n";
     }
     print $out "**Returns:** `$ret`\n\n";
 
@@ -171,7 +172,7 @@ sub process_property {
     my $access = $props{'access'};
     my @anns;
 
-    print $out "**Type:** `$type`\n";
+    print $out "**Type:** `$type`\n\n";
     print $out "**Access:** `$access`\n";
 
     while (@_) {
@@ -222,8 +223,8 @@ sub process_signal {
         }
     }
 
-    print_annotations(@anns);
     print $out "**Type**: `$type`\n\n";
+    print_annotations(@anns);
 }
 
 sub process_annotation {
