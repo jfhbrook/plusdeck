@@ -120,7 +120,7 @@ get-dbus-iface:
 
 # Display markdown documentation based on the live service from dbus
 dbus-iface-markdown:
-  ./scripts/dbus-iface-markdown.pl --dest org.jfhbrook.plusdeck --iface org.jfhbrook.plusdeck --title 'Dbus Interface' --out ./docs/dbus/iface.md
+  ./scripts/dbus-iface-markdown.pl --dest org.jfhbrook.plusdeck --out ./docs/dbus/iface.md
 
 #
 # Shell and console

@@ -6,6 +6,7 @@ use warnings;
 
 use Data::Dumper;
 use Getopt::Long;
+use List::Util 'any';
 use XML::Parser;
 
 package main;
@@ -23,27 +24,21 @@ PARAMETERS:
 OPTIONS:
   --help         Show this help message
   --dest DEST    Dbus destination to document
-  --iface IFACE  Dbus interface to document
   --out FILE     File to write output to (defaults to stdout)
   --system       Connect to the system bus
-  --title        An optional document title
 ';
 
 my $help = '';
 my $dest;
-my $iface_name;
 my $file   = '';
 my $out    = \*STDOUT;
-my $title  = '';
 my $system = '';
 
 GetOptions(
-    "help",    => \$help,
-    "dest=s",  => \$dest,
-    "iface=s", => \$iface_name,
-    "out=s"    => \$file,
-    "system",  => \$system,
-    "title=s", => \$title
+    "help",   => \$help,
+    "dest=s", => \$dest,
+    "out=s"   => \$file,
+    "system", => \$system
 ) or die($HELP);
 
 my $path = "/";
@@ -87,9 +82,7 @@ my $bus    = $parser->parse($res);
 close $out;
 
 sub process_bus {
-    if ($title) {
-        print $out "# $title\n\n";
-    }
+    print $out "# $dest ($path)\n\n";
     while (@_) {
         my $child = shift;
         if ( $child eq 'interface' ) {
@@ -102,26 +95,27 @@ sub process_bus {
 sub process_iface {
     my %props = %{ shift @_ };
 
-    if ( $props{'name'} eq $iface_name ) {
-        print $out "## $props{'name'}\n\n";
-        while (@_) {
-            my $child = shift;
-            if ( $child eq 0 ) {
-                shift;
-                next;
-            }
-            elsif ( $child eq 'method' ) {
-                &process_method( @{ shift @_ } );
-            }
-            elsif ( $child eq 'property' ) {
-                &process_property( @{ shift @_ } );
-            }
-            elsif ( $child eq 'signal' ) {
-                &process_signal( @{ shift @_ } );
-            }
-            else {
-                print $out Dumper($child);
-            }
+    if ( $props{'name'} =~ /^org.freedesktop/ ) {
+        return;
+    }
+    print $out "## Interface: $props{'name'}\n\n";
+    while (@_) {
+        my $child = shift;
+        if ( $child eq 0 ) {
+            shift;
+            next;
+        }
+        elsif ( $child eq 'method' ) {
+            &process_method( @{ shift @_ } );
+        }
+        elsif ( $child eq 'property' ) {
+            &process_property( @{ shift @_ } );
+        }
+        elsif ( $child eq 'signal' ) {
+            &process_signal( @{ shift @_ } );
+        }
+        else {
+            print $out Dumper($child);
         }
     }
 }
