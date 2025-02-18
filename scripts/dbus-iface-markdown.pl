@@ -11,11 +11,6 @@ use XML::Parser;
 
 package main;
 
-# TODO: Support other dbus-send flags:
-# [--system | --session | --bus=ADDRESS | --peer=ADDRESS ]
-# [--sender=NAME]
-# [--reply-timeout=MSEC]
-
 my $HELP =
 'Usage: dbus-iface-markdown [--help] [--system | --session | --bus=ADDRESS | --peer=ADDRESS] [--sender=NAME] [--dest=NAME] [--reply-timeout=MSEC] <PATH>
 
@@ -23,35 +18,38 @@ PARAMETERS:
   PATH  An optional object path (defaults to /)
 
 OPTIONS:
-  --help           Show this help message
-  --bus ADDRESS    Connect to the bus at the supplied address
-  --dest DEST      Dbus destination
-  --out FILE       File to write output to (defaults to stdout)
-  --peer ADDRESS   Connect to the peer bus at the supplied address
-  --sender SENDER  Dbus sender
-  --session        Connect to the session bus
-  --system         Connect to the system bus
+  --help                Show this help message
+  --bus ADDRESS         Connect to the bus at the supplied address
+  --dest DEST           Dbus destination
+  --out FILE            File to write output to (defaults to stdout)
+  --peer ADDRESS        Connect to the peer bus at the supplied address
+  --reply-timeout MSEC  Set a reply timeout
+  --sender SENDER       Dbus sender
+  --session             Connect to the session bus
+  --system              Connect to the system bus
 ';
 
 my $help        = '';
 my $bus_address = '';
 my $dest;
-my $out_file     = '';
-my $out          = \*STDOUT;
-my $peer_address = '';
-my $sender       = '';
-my $session      = '';
-my $system       = '';
+my $out_file      = '';
+my $out           = \*STDOUT;
+my $peer_address  = '';
+my $reply_timeout = -1;
+my $sender        = '';
+my $session       = '';
+my $system        = '';
 
 GetOptions(
-    "help"     => \$help,
-    "bus=s"    => \$bus_address,
-    "dest=s"   => \$dest,
-    "out=s"    => \$out_file,
-    "peer=s"   => \$peer_address,
-    "sender=s" => \$sender,
-    "session"  => \$session,
-    "system"   => \$system
+    "help"            => \$help,
+    "bus=s"           => \$bus_address,
+    "dest=s"          => \$dest,
+    "out=s"           => \$out_file,
+    "peer=s"          => \$peer_address,
+    "reply-timeout=i" => \$reply_timeout,
+    "sender=s"        => \$sender,
+    "session"         => \$session,
+    "system"          => \$system
 ) or die($HELP);
 
 my $object_path = "/";
@@ -89,6 +87,10 @@ if ($session) {
 
 if ($sender) {
     $send_args .= "--sender=$sender ";
+}
+
+if ( $reply_timeout > 0 ) {
+    $send_args .= "--reply-timeout=$reply_timeout ";
 }
 
 sub extract_response {
