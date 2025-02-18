@@ -114,6 +114,10 @@ install-service:
 service-logs:
   journalctl -xeu plusdeck.service
 
+# Display the raw XML introspection of the live dbus service
+get-dbus-iface:
+  ./scripts/get-dbus-iface.sh
+
 # Display markdown documentation based on the live service from dbus
 dbus-iface-markdown:
   ./scripts/dbus-iface-markdown.pl --dest org.jfhbrook.plusdeck --iface org.jfhbrook.plusdeck --title 'Dbus Interface' --out ./docs/dbus/iface.md
