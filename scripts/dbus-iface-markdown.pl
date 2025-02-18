@@ -9,6 +9,8 @@ use XML::Parser;
 
 package main;
 
+my $out = \*STDOUT;
+
 sub extract_response {
     my ($raw) = @_;
     $raw =~ s/\"$//;
@@ -46,7 +48,7 @@ sub process_iface {
     my %props = %{ shift @_ };
 
     if ( $props{'name'} eq $iface_name ) {
-        print "## $props{'name'}\n\n";
+        print $out "## $props{'name'}\n\n";
         while (@_) {
             my $child = shift;
             if ( $child eq 0 ) {
@@ -63,7 +65,7 @@ sub process_iface {
                 &process_signal( @{ shift @_ } );
             }
             else {
-                print Dumper($child);
+                print $out Dumper($child);
             }
         }
     }
@@ -71,7 +73,7 @@ sub process_iface {
 
 sub process_method {
     my %props = %{ shift @_ };
-    print "### Method: $props{'name'}\n\n";
+    print $out "### Method: $props{'name'}\n\n";
     my @args;
     my $ret = 'void';
     my @anns;
@@ -92,8 +94,7 @@ sub process_method {
                 $ret = $props{'type'};
             }
             else {
-                print "Unexpected arg props:\n";
-                print Dumper(%props);
+                print $out Dumper(%props);
             }
         }
         elsif ( $child eq 'annotation' ) {
@@ -101,22 +102,22 @@ sub process_method {
             push @anns, $ann;
         }
         else {
-            print Dumper($child);
+            print $out Dumper($child);
         }
     }
 
     print_annotations(@anns);
 
     if (@args) {
-        print '**Arguments:** ';
-        print join( ", ", @args ) . "\n";
+        print $out '**Arguments:** ';
+        print $out join( ", ", @args ) . "\n";
     }
-    print "**Returns: $ret\n\n";
+    print $out "**Returns: $ret\n\n";
 }
 
 sub process_property {
     my %props = %{ shift @_ };
-    print "### Property: $props{'name'}\n\n";
+    print $out "### Property: $props{'name'}\n\n";
     my @anns;
 
     while (@_) {
@@ -130,7 +131,7 @@ sub process_property {
             push @anns, $ann;
         }
         else {
-            print Dumper($child);
+            print $out Dumper($child);
         }
     }
 
@@ -139,7 +140,7 @@ sub process_property {
 
 sub process_signal {
     my %props = %{ shift @_ };
-    print "### Signal: $props{'name'}\n\n";
+    print $out "### Signal: $props{'name'}\n\n";
     my $type = 'void';
     my @anns;
 
@@ -159,12 +160,12 @@ sub process_signal {
             push @anns, $ann;
         }
         else {
-            print Dumper($child);
+            print $out Dumper($child);
         }
     }
 
     print_annotations(@anns);
-    print "**Type: $type\n\n";
+    print $out "**Type: $type\n\n";
 }
 
 sub process_annotation {
@@ -177,9 +178,9 @@ sub print_annotations {
         return;
     }
 
-    print "**Annotations:**\n\n";
+    print $out "**Annotations:**\n\n";
     foreach (@_) {
-        print "$_\n";
+        print $out "$_\n";
     }
-    print "\n";
+    print $out "\n";
 }
