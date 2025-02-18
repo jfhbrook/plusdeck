@@ -16,34 +16,48 @@ package main;
 # [--sender=NAME]
 # [--reply-timeout=MSEC]
 
-my $HELP = 'Usage: dbus-iface-markdown OPTIONS <PATH>
+my $HELP =
+'Usage: dbus-iface-markdown [--help] [--system | --session | --bus=ADDRESS | --peer=ADDRESS] [--sender=NAME] [--dest=NAME] [--reply-timeout=MSEC] <PATH>
 
 PARAMETERS:
-  PATH  An optional path (defaults to /)
+  PATH  An optional object path (defaults to /)
 
 OPTIONS:
-  --help         Show this help message
-  --dest DEST    Dbus destination to document
-  --out FILE     File to write output to (defaults to stdout)
-  --system       Connect to the system bus
+  --help           Show this help message
+  --bus ADDRESS    Connect to the bus at the supplied address
+  --dest DEST      Dbus destination
+  --out FILE       File to write output to (defaults to stdout)
+  --peer ADDRESS   Connect to the peer bus at the supplied address
+  --sender SENDER  Dbus sender
+  --session        Connect to the session bus
+  --system         Connect to the system bus
 ';
 
-my $help = '';
+my $help        = '';
+my $bus_address = '';
 my $dest;
-my $file   = '';
-my $out    = \*STDOUT;
-my $system = '';
+my $out_file     = '';
+my $out          = \*STDOUT;
+my $peer_address = '';
+my $sender       = '';
+my $session      = '';
+my $system       = '';
 
 GetOptions(
-    "help",   => \$help,
-    "dest=s", => \$dest,
-    "out=s"   => \$file,
-    "system", => \$system
+    "help"     => \$help,
+    "bus=s"    => \$bus_address,
+    "dest=s"   => \$dest,
+    "out=s"    => \$out_file,
+    "peer=s"   => \$peer_address,
+    "sender=s" => \$sender,
+    "session"  => \$session,
+    "system"   => \$system
 ) or die($HELP);
 
-my $path = "/";
+my $object_path = "/";
+
 if ( $#ARGV > 0 ) {
-    $path = shift(@ARGV);
+    $object_path = shift(@ARGV);
 }
 
 if ($help) {
@@ -51,12 +65,30 @@ if ($help) {
     exit 0;
 }
 
-if ($file) {
-    open( $out, '>', $file ) or die("Can not write to $file $!");
+if ($out_file) {
+    open( $out, '>', $out_file ) or die("Can not write to $out_file $!");
+}
+
+my $send_args = '';
+
+if ($bus_address) {
+    $send_args .= "--bus=$bus_address ";
+}
+
+if ($peer_address) {
+    $send_args .= "--peer=$peer_address ";
 }
 
 if ($system) {
-    $system = '--system';
+    $send_args .= '--system ';
+}
+
+if ($session) {
+    $send_args .= '--session ';
+}
+
+if ($sender) {
+    $send_args .= "--sender=$sender ";
 }
 
 sub extract_response {
@@ -67,8 +99,8 @@ sub extract_response {
     join "\n", @res;
 }
 
-my $raw = `dbus-send --system \\
-  --dest=$dest '$path' \\
+my $raw = `dbus-send $send_args \\
+  --dest=$dest '$object_path' \\
   --print-reply \\
   org.freedesktop.DBus.Introspectable.Introspect`;
 
@@ -82,7 +114,7 @@ my $bus    = $parser->parse($res);
 close $out;
 
 sub process_bus {
-    print $out "# $dest ($path)\n\n";
+    print $out "# $dest ($object_path)\n\n";
     while (@_) {
         my $child = shift;
         if ( $child eq 'interface' ) {

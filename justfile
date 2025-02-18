@@ -142,7 +142,7 @@ build-docs:
 
 # Render markdown documentation based on the live service from dbus
 generate-dbus-iface-docs:
-  ./scripts/dbus-iface-markdown.pl --dest org.jfhbrook.plusdeck --out ./docs/dbus/iface.md
+  ./scripts/dbus-iface-markdown.pl --system --dest org.jfhbrook.plusdeck --out ./docs/dbus/iface.md
 
 #
 # Package publishing
