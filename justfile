@@ -115,12 +115,8 @@ service-logs:
   journalctl -xeu plusdeck.service
 
 # Display the raw XML introspection of the live dbus service
-get-dbus-iface:
-  ./scripts/get-dbus-iface.sh
-
-# Display markdown documentation based on the live service from dbus
-dbus-iface-markdown:
-  ./scripts/dbus-iface-markdown.pl --dest org.jfhbrook.plusdeck --out ./docs/dbus/iface.md
+print-iface:
+  dbus-send --system --dest=org.jfhbrook.plusdeck "/" --print-reply org.freedesktop.DBus.Introspectable.Introspect
 
 #
 # Shell and console
@@ -143,6 +139,10 @@ docs:
 # Build the documentation
 build-docs:
   uv run mkdocs build
+
+# Render markdown documentation based on the live service from dbus
+generate-dbus-iface-docs:
+  ./scripts/dbus-iface-markdown.pl --dest org.jfhbrook.plusdeck --out ./docs/dbus/iface.md
 
 #
 # Package publishing

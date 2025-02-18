@@ -20,10 +20,10 @@ You can review recent logs by checking the status of the `dbus` unit:
 sudo systemctl status dbus
 ```
 
-## Viewing the Dbus Interface
+## Printing the Live Dbus Interface
 
 I have a just task for that:
 
 ```sh
-just get-dbus-iface
+just print-iface
 ```
