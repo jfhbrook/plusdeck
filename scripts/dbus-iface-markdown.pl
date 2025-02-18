@@ -5,11 +5,61 @@ use utf8;
 use warnings;
 
 use Data::Dumper;
+use Getopt::Long;
 use XML::Parser;
 
 package main;
 
-my $out = \*STDOUT;
+# TODO: Support other dbus-send flags:
+# [--system | --session | --bus=ADDRESS | --peer=ADDRESS ]
+# [--sender=NAME]
+# [--reply-timeout=MSEC]
+
+my $HELP = 'Usage: dbus-iface-markdown OPTIONS <PATH>
+
+PARAMETERS:
+  PATH  An optional path (defaults to /)
+
+OPTIONS:
+  --help         Show this help message
+  --dest DEST    Dbus destination to document
+  --iface IFACE  Dbus interface to document
+  --out FILE     File to write output to (defaults to stdout)
+  --system       Connect to the system bus
+';
+
+my $help = '';
+my $dest;
+my $iface_name;
+my $file   = '';
+my $out    = \*STDOUT;
+my $system = '';
+
+GetOptions(
+    "help",    => \$help,
+    "dest=s",  => \$dest,
+    "iface=s", => \$iface_name,
+    "out=s"    => \$file,
+    "system",  => \$system
+) or die($HELP);
+
+my $path = "/";
+if ( $#ARGV > 0 ) {
+    $path = shift(@ARGV);
+}
+
+if ($help) {
+    print $HELP;
+    exit 0;
+}
+
+if ($file) {
+    open( $out, '>', $file ) or die("Can not write to $file $!");
+}
+
+if ($system) {
+    $system = '--system';
+}
 
 sub extract_response {
     my ($raw) = @_;
@@ -19,10 +69,10 @@ sub extract_response {
     join "\n", @res;
 }
 
-my $cmd = 'dbus-send --system \
-  --dest=org.jfhbrook.plusdeck "/" \
-  --print-reply \
-  org.freedesktop.DBus.Introspectable.Introspect';
+my $cmd = "dbus-send --system \\
+  --dest=$dest '$path' \\
+  --print-reply \\
+  org.freedesktop.DBus.Introspectable.Introspect";
 
 my $raw = `$cmd`;
 my $res = &extract_response($raw);
@@ -30,9 +80,9 @@ my $res = &extract_response($raw);
 my $parser = XML::Parser->new( Style => 'Tree' );
 my $bus    = $parser->parse($res);
 
-my $iface_name = 'org.jfhbrook.plusdeck';
-
 &process_bus( @{ $bus->[1] } );
+
+close $out;
 
 sub process_bus {
     while (@_) {
