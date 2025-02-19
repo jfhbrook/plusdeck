@@ -93,40 +93,41 @@ if ( $reply_timeout > 0 ) {
     $send_args .= "--reply-timeout=$reply_timeout ";
 }
 
-sub extract_response {
-    my ($raw) = @_;
-    $raw =~ s/\"$//;
-    my @res = split /\n/, $raw;
-    @res = splice @res, 3;
-    join "\n", @res;
-}
-
-my $raw = `dbus-send $send_args \\
+my $res = `dbus-send $send_args \\
   --dest=$dest '$object_path' \\
   --print-reply \\
   org.freedesktop.DBus.Introspectable.Introspect`;
 
-my $res = &extract_response($raw);
+my $doc = &response($res);
 
-my $parser = XML::Parser->new( Style => 'Tree' );
-my $bus    = $parser->parse($res);
-
-&process_bus( @{ $bus->[1] } );
+&visit_bus( @{ $doc->[1] } );
 
 close $out;
 
-sub process_bus {
+sub response {
+    my ($raw) = @_;
+    $raw =~ s/\"$//;
+
+    my @res = split /\n/, $raw;
+    @res = splice @res, 3;
+
+    my $doc    = join "\n", @res;
+    my $parser = XML::Parser->new( Style => 'Tree' );
+    $parser->parse($doc);
+}
+
+sub visit_bus {
     print $out "# $dest ($object_path)\n\n";
     while (@_) {
         my $child = shift;
         if ( $child eq 'interface' ) {
             my $iface = shift;
-            &process_iface( @{$iface} );
+            &visit_iface( @{$iface} );
         }
     }
 }
 
-sub process_iface {
+sub visit_iface {
     my %props = %{ shift @_ };
 
     if ( $props{'name'} =~ /^org.freedesktop/ ) {
@@ -140,13 +141,13 @@ sub process_iface {
             next;
         }
         elsif ( $child eq 'method' ) {
-            &process_method( @{ shift @_ } );
+            &visit_method( @{ shift @_ } );
         }
         elsif ( $child eq 'property' ) {
-            &process_property( @{ shift @_ } );
+            &visit_property( @{ shift @_ } );
         }
         elsif ( $child eq 'signal' ) {
-            &process_signal( @{ shift @_ } );
+            &visit_signal( @{ shift @_ } );
         }
         else {
             &dump($child);
@@ -154,7 +155,7 @@ sub process_iface {
     }
 }
 
-sub process_method {
+sub visit_method {
     my %props = %{ shift @_ };
     print $out "### Method: $props{'name'}\n\n";
     my @args;
@@ -181,7 +182,7 @@ sub process_method {
             }
         }
         elsif ( $child eq 'annotation' ) {
-            my $ann = &process_annotation( @{ shift @_ } );
+            my $ann = &visit_annotation( @{ shift @_ } );
             push @anns, $ann;
         }
         else {
@@ -199,7 +200,7 @@ sub process_method {
     print_annotations(@anns);
 }
 
-sub process_property {
+sub visit_property {
     my %props = %{ shift @_ };
     print $out "### Property: $props{'name'}\n\n";
     my $type   = $props{'type'};
@@ -216,7 +217,7 @@ sub process_property {
             next;
         }
         elsif ( $child eq 'annotation' ) {
-            my $ann = &process_annotation( @{ shift @_ } );
+            my $ann = &visit_annotation( @{ shift @_ } );
             push @anns, $ann;
         }
         else {
@@ -231,7 +232,7 @@ sub process_property {
     print_annotations(@anns);
 }
 
-sub process_signal {
+sub visit_signal {
     my %props = %{ shift @_ };
     print $out "### Signal: $props{'name'}\n\n";
     my $type = 'void';
@@ -249,7 +250,7 @@ sub process_signal {
             $type = $props{'type'};
         }
         elsif ( $child eq 'annotation' ) {
-            my $ann = &process_annotation( @{ shift @_ } );
+            my $ann = &visit_annotation( @{ shift @_ } );
             push @anns, $ann;
         }
         else {
@@ -261,7 +262,7 @@ sub process_signal {
     print_annotations(@anns);
 }
 
-sub process_annotation {
+sub visit_annotation {
     my %props = %{ shift @_ };
     "- $props{'name'}: `$props{'value'}`";
 }
