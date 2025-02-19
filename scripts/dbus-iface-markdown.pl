@@ -100,7 +100,7 @@ my $res = `dbus-send $send_args \\
 
 my $doc = &response($res);
 
-&visit_bus( @{ $doc->[1] } );
+&visit_node( @{ $doc->[1] } );
 
 close $out;
 
@@ -116,7 +116,7 @@ sub response {
     $parser->parse($doc);
 }
 
-sub visit_bus {
+sub visit_node {
     print $out "# $dest ($object_path)\n\n";
     while (@_) {
         my $child = shift;
