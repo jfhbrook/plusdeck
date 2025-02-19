@@ -141,8 +141,8 @@ build-docs:
   uv run mkdocs build
 
 # Render markdown documentation based on the live service from dbus
-generate-dbus-iface-docs:
-  dbus-iface-markdown --system --dest org.jfhbrook.plusdeck --out ./docs/dbus/iface.md
+generate-dbus-iface-docs *ARGV:
+  @bash ./scripts/generate-dbus-iface-docs.sh {{ ARGV }}
 
 #
 # Package publishing
