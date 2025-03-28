@@ -80,7 +80,7 @@ check:
 
 # Run tests with pytest
 test:
-  uv run pytest -vvv ./tests
+  uv run pytest -vvv ./tests --ignore=./tests/test_integration.py
   @just clean-test
 
 # Update snapshots
@@ -88,9 +88,9 @@ snap:
   uv run pytest --snapshot-update ./tests
   @just clean-test
 
-# Run integration tests (for what they are)
+# Run integration tests
 integration:
-  uv run python ./tests/integration.py
+  uv run pytest ./tests/test_integration.py
 
 clean-test:
   rm -f pytest_runner-*.egg
