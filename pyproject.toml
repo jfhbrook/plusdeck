@@ -67,7 +67,6 @@ dev = [
   "rich",
   "syrupy",
   "tox",
-  "twine",
   "validate-pyproject[all]",
 ]
 
