@@ -67,7 +67,6 @@ start *argv:
 format:
   uv run black './plusdeck' ./tests ./scripts
   uv run isort --settings-file . './plusdeck' ./tests ./scripts
-  if which perltidy > /dev/null; then perltidy -b -bext='/' scripts/*.pl; fi
 
 # Lint with flake8
 lint:
