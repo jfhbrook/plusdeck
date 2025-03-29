@@ -2,11 +2,9 @@
 
 import os
 import os.path
-from typing import Callable, Never
 from unittest.mock import Mock
 
 import pytest
-from rich.prompt import Prompt
 
 from plusdeck.client import Client, State
 import plusdeck.config
