@@ -66,14 +66,13 @@ flake8
 flake8-black
 pytest
 pytest-asyncio
+pytest-gak
 black
 isort
 jupyterlab
 mkdocs
 mkdocs-include-markdown-plugin
 mkdocstrings[python]
-rich
 syrupy
 tox
-twine
 validate-pyproject[all]

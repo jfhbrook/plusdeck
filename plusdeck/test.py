@@ -1,110 +1,55 @@
-import asyncio
-from collections.abc import Awaitable
-from inspect import getmembers, isfunction
 import sys
-from typing import Callable, cast, Protocol, Set, Union
+from typing import List
 
-from rich.prompt import Prompt
-
-"""Tools for manual testing with real hardware."""
+from pytest import console_main
 
 
-class AbortError(Exception):
-    """A manual testing step has been aborted."""
+def parse_args(raw_args: List[str] = sys.argv[1:]) -> List[str]:
+    """
+    Given arguments for pytest, ensure that -s or --capture=no is set.
 
-    pass
+    This function is not entirely robust, as it doesn't implement full arguments
+    parsing as in pytest. If an option is passed "-s" or "--capture=no" as a value,
+    this will fail to add the appropriate flag. But those cases should be very
+    rare, and a full options parse is difficult.
+    """
 
+    args: List[str] = list()
 
-def confirm(text: str) -> None:
-    """Manually confirm an expected state."""
+    has_no_capture_flag = False
+    for i, arg in enumerate(raw_args):
+        if arg == "--capture=no" or arg == "-s":
+            has_no_capture_flag = True
+            args += raw_args[i:]
+            break
 
-    res = Prompt.ask(text, choices=["confirm", "abort"])
-
-    if res == "abort":
-        raise AbortError("Aborted.")
-
-
-def take_action(text: str) -> None:
-    """Take a manual action before continuing."""
-
-    res = Prompt.ask(text, choices=["continue", "abort"])
-
-    if res == "abort":
-        raise AbortError("Aborted.")
-
-
-def check(text: str, expected: str) -> None:
-    """Manually check whether or not an expected state is so."""
-
-    res = Prompt.ask(text, choices=["yes", "no", "abort"])
-
-    if res == "abort":
-        raise AbortError("Aborted.")
-
-    assert res == "yes", expected
-
-
-class MarkedTest(Protocol):
-    marks: Set[str]
-
-    def __call__(self) -> Awaitable[None]: ...
-
-
-UnmarkedTest = Callable[[], Awaitable[None]]
-
-Test = Union[UnmarkedTest, MarkedTest]
-
-
-def mark(tag: str) -> Callable[[Test], MarkedTest]:
-    def decorator(test: Test) -> MarkedTest:
-        marked = cast(MarkedTest, test)
-
-        if not hasattr(test, "marks"):
-            marked.marks = set()
-
-        marked.marks.add(tag)
-
-        return marked
-
-    return decorator
-
-
-def skip(test: Test) -> MarkedTest:
-    """Skip a test."""
-
-    return mark("skip")(test)
-
-
-def marked_with(tag: str, test: Test) -> bool:
-    """Check if a test has a mark."""
-
-    if not hasattr(test, "marks"):
-        return False
-
-    return tag in cast(MarkedTest, test).marks
-
-
-async def _run_tests(__name__: str) -> None:
-    for name, test in getmembers(sys.modules[__name__], isfunction):
-        if not name.startswith("test_"):
+        if arg.startswith("--capture="):
+            # Drop the flag, since we're going to override it later
             continue
 
-        if marked_with("skip", test):
-            print(f"=== {name} SKIPPED ===")
-            continue
+        args.append(arg)
 
-        print(f"=== {name} ===")
-        try:
-            await test()
-        except Exception as exc:
-            print(f"{name} FAILED")
-            print(exc)
-        else:
-            print(f"=== {name} PASSED ===")
+    if not has_no_capture_flag:
+        args.insert(0, "--capture=no")
+
+    return args
 
 
-def run_tests(__name__: str) -> None:
-    """Run integration tests in module."""
+def main() -> int:
+    """
+    A command line entry point that calls pytest with --capture=no set.
+    """
 
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(_run_tests(__name__))
+    args = parse_args()
+    # sys.argv[0] is typically the command that was run
+    args.insert(0, "pytest")
+
+    # Patch sys.argv so the pytest entry point picks it up
+    sys.argv = args
+
+    # Call the standard pytest entry point with modified args
+    return console_main()
+
+
+if __name__ == "__main__":
+    sys.exit(main())
