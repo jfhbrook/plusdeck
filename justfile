@@ -90,7 +90,7 @@ snap:
 
 # Run integration tests
 integration:
-  uv run ./plusdeck/test.py ./tests/test_integration.py
+  uv run gaktest ./tests/test_integration.py
 
 clean-test:
   rm -f pytest_runner-*.egg

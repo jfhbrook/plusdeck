@@ -58,6 +58,7 @@ dev = [
   "flake8-black",
   "pytest",
   "pytest-asyncio",
+  "pytest-gak",
   "black",
   "isort",
   "jupyterlab",
