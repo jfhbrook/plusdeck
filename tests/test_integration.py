@@ -1,13 +1,16 @@
+import pytest
+
 from plusdeck.client import Command, create_connection, State
 from plusdeck.config import Config
-from plusdeck.test import check, confirm, run_tests, skip, take_action
 
 CONFIG = Config.from_environment()
 
 
-@skip
-async def test_manual_no_events():
-    """Plus Deck plays tapes manually without state subscription."""
+@pytest.mark.skip
+async def test_manual_no_events(check, confirm, take_action) -> None:
+    """
+    Plus Deck plays tapes manually without state subscription.
+    """
 
     confirm("There is NO tape in the deck")
 
@@ -33,8 +36,11 @@ async def test_manual_no_events():
     client.close()
 
 
-async def test_commands_and_events():
-    """Plus Deck plays tapes with commands when subscribed."""
+@pytest.mark.asyncio
+async def test_commands_and_events(check, confirm, take_action) -> None:
+    """
+    Plus Deck plays tapes with commands when subscribed.
+    """
 
     confirm("There is NO tape in the deck")
 
@@ -107,7 +113,3 @@ async def test_commands_and_events():
     client.events.remove_listener("state", log_state)
 
     client.close()
-
-
-if __name__ == "__main__":
-    run_tests(__name__)
