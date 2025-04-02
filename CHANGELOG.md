@@ -1,6 +1,7 @@
 yyyy/mm/dd Version x.y.z
 ------------------------
 - Include generated DBus interface docs
+- Fix links in documentation
 
 2025/02/09 Version 4.0.1-1
 --------------------------
