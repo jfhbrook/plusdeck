@@ -2,6 +2,7 @@ yyyy/mm/dd Version x.y.z
 ------------------------
 - Include generated DBus interface docs
 - Fix links in documentation
+- CLI respects `CRYSTALFONTZ_CONFIG_FILE` environment variable
 
 2025/02/09 Version 4.0.1-1
 --------------------------

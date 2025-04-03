@@ -177,7 +177,7 @@ def pass_config(fn: Callable[..., R]) -> Callable[..., R]:
     help=f"Load the global config file at {GLOBAL_FILE} "
     "(default true when called with sudo)",
 )
-@click.option("--config-file", "-C", type=click.Path(), help="A path to a config file")
+@click.option("--config-file", "-C", envvar="PLUSDECK_CONFIG_FILE", type=click.Path(), help="A path to a config file")
 @click.option(
     "--log-level",
     envvar="PLUSDECK_LOG_LEVEL",
