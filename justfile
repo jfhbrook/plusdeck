@@ -96,14 +96,6 @@ clean-test:
   rm -f pytest_runner-*.egg
   rm -rf tests/__pycache__
 
-# Run tests using tox
-tox:
-  uv run tox
-  @just _clean-tox
-
-clean-tox:
-  rm -rf .tox
-
 # Install systemd service files and dbus config for development purposes
 install-service:
   sudo install -p -D -m 0644 systemd/plusdeck.service /usr/lib/systemd/system/plusdeck.service
