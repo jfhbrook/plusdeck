@@ -1,12 +1,11 @@
-- Consistently licensed as MPL-2.0
-- Improved PyPI classifiers
-
 yyyy/mm/dd Version x.y.z
 ------------------------
 - Include generated DBus interface docs
 - Fix links in documentation
 - CLI respects `CRYSTALFONTZ_CONFIG_FILE` environment variable
 - Remove `tox` from development tools
+- Consistently licensed as MPL-2.0
+- Improved PyPI classifiers
 
 2025/02/09 Version 4.0.1-1
 --------------------------
