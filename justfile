@@ -231,7 +231,7 @@ publish:
   @just build-copr plusdeck
 
 # Clean up loose files
-clean: clean-venv clean-compile clean-test clean-build clean-release clean-tox
+clean: clean-venv clean-compile clean-test clean-build clean-release
   rm -rf plusdeck.egg-info
   rm -f plusdeck/*.pyc
   rm -rf plusdeck/__pycache__
