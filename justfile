@@ -175,14 +175,6 @@ check-main-branch:
 tag:
   ./scripts/tag.sh
 
-# Bundle the package for GitHub release
-bundle-gh-release:
-  ./scripts/bundle-gh-release.sh "$(./scripts/version.py)-$(./scripts/release-version.py)"
-
-# Clean up the release package
-clean-release:
-  rm -f "plusdeck-*-*.tar.gz"
-
 # Push main and tags
 push:
   git push origin main --follow-tags
@@ -216,12 +208,8 @@ publish:
   # Tag and push
   @just tag
   @just push
-  # Build package and bundle release
+  # Build package and cut github release
   if [[ "$(./scripts/release-version.py)" == '1' ]]; then just clean-build; fi
-  @just clean-release
-  if [[ "$(./scripts/release-version.py)" == '1' ]]; then just build; fi
-  @just bundle-gh-release
-  # Publish package and release
   @just gh-release
   if [[ "$(./scripts/release-version.py)" == '1' ]]; then just publish-pypi; fi
   # Update packages on COPR
@@ -231,7 +219,7 @@ publish:
   @just build-copr plusdeck
 
 # Clean up loose files
-clean: clean-venv clean-compile clean-test clean-build clean-release
+clean: clean-venv clean-compile clean-test clean-build
   rm -rf plusdeck.egg-info
   rm -f plusdeck/*.pyc
   rm -rf plusdeck/__pycache__
