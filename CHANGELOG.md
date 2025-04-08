@@ -1,4 +1,5 @@
 - Consistently licensed as MPL-2.0
+- Improved PyPI classifiers
 
 yyyy/mm/dd Version x.y.z
 ------------------------
