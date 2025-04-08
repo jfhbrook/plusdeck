@@ -1,4 +1,4 @@
-yyyy/mm/dd Version x.y.z
+yyyy/mm/dd Version x.y.z-1
 ------------------------
 - Include generated DBus interface docs
 - Fix links in documentation
