@@ -1,3 +1,5 @@
+- Consistently licensed as MPL-2.0
+
 yyyy/mm/dd Version x.y.z
 ------------------------
 - Include generated DBus interface docs
