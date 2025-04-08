@@ -3,14 +3,15 @@
 import logging
 import os
 from pathlib import Path
-from unittest.mock import Mock
 from typing import Dict, Generator, List, Optional
+from unittest.mock import Mock
 
 import pytest
 
+from tests.helpers import Cli, EnvFactory
+
 from plusdeck.client import Client, State
 import plusdeck.config
-from tests.helpers import Cli, EnvFactory
 
 logger = logging.getLogger(__name__)
 

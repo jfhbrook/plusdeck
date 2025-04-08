@@ -5,8 +5,6 @@ import os
 import subprocess
 from typing import Dict, Generator, List, Optional, Protocol, Self
 
-from crystalfontz.character import SpecialCharacter
-
 
 class Cli:
     """
@@ -46,7 +44,3 @@ class EnvFactory(Protocol):
     def __call__(
         self: Self, env: Optional[Dict[str, str]] = None
     ) -> Dict[str, str]: ...
-
-
-def special_character_as_rows(character: SpecialCharacter) -> List[str]:
-    return ["".join(["█" if p else " " for p in row]) for row in character.pixels]

@@ -5,7 +5,9 @@ import sys
 from traceback import format_exc
 from typing import Any, AsyncGenerator, cast, List, Optional
 
-from sdbus.sd_bus_internals import SdBusLibraryError
+from sdbus.sd_bus_internals import (  #pyright: ignore [reportMissingModuleSource]
+    SdBusLibraryError,
+)
 
 ERROR_NUMBER_RE = r"returned error number: (\d+)"
 

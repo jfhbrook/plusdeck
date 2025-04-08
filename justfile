@@ -81,7 +81,7 @@ check:
 # Run tests with pytest
 test *argv:
   uv run pytest {{ argv }} ./tests --ignore-glob='./tests/integration/**'
-  @just _clean-test
+  @just clean-test
 
 # Update snapshots
 snap:

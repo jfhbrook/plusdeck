@@ -31,4 +31,4 @@ jobs:
           npx pyright@latest
       - name: Run tests
         run: |
-          pytest ./tests --ignore=tests/test_integration.py
+          pytest ./tests --ignore-glob='./tests/integration/**'

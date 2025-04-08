@@ -12,7 +12,11 @@ from typing import Any, cast, List, Optional, Self
 from unittest.mock import Mock
 
 import click
-from sdbus import sd_bus_open_system, sd_bus_open_user, SdBus
+from sdbus import (  #pyright: ignore [reportMissingModuleSource]
+    sd_bus_open_system,
+    sd_bus_open_user,
+    SdBus,
+)
 
 from plusdeck.cli import async_command, AsyncCommand, echo, LogLevel, OutputMode, STATE
 from plusdeck.client import State
