@@ -19,6 +19,5 @@ tar -czf "plusdeck-${FULL_VERSION}.tar.gz" \
   setup.cfg \
   systemd \
   tests \
-  tox.ini \
   typings \
   uv.lock
