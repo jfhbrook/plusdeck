@@ -26,6 +26,7 @@ tar -xzf %{SOURCE0}
 mkdir -p %{buildroot}%{_prefix}/lib/systemd/system
 install -p -D -m 0644 systemd/plusdeck.service %{buildroot}%{_prefix}/lib/systemd/system/plusdeck.service
 install -p -D -m 0644 dbus/org.jfhbrook.plusdeck.conf %{buildroot}%{_prefix}/share/dbus-1/system.d/org.jfhbrook.plusdeck.conf
+install -p -m 755 bin/plusdeck-dbus %{buildroot}%{_bindir}/plusdeck
 
 %check
 
@@ -33,6 +34,7 @@ install -p -D -m 0644 dbus/org.jfhbrook.plusdeck.conf %{buildroot}%{_prefix}/sha
 %files
 %{_prefix}/lib/systemd/system/plusdeck.service
 %{_prefix}/share/dbus-1/system.d/org.jfhbrook.plusdeck.conf
+%{_bindir}/plusdeck
 
 %changelog
 * Sun Feb 09 2025 Josh Holbrook <josh.holbrook@gmail.com> 4.0.1-1
