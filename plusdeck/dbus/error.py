@@ -5,7 +5,7 @@ import sys
 from traceback import format_exc
 from typing import Any, AsyncGenerator, cast, List, Optional
 
-from sdbus.sd_bus_internals import (  #pyright: ignore [reportMissingModuleSource]
+from sdbus.sd_bus_internals import (  # pyright: ignore [reportMissingModuleSource]
     SdBusLibraryError,
 )
 

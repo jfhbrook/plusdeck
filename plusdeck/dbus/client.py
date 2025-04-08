@@ -12,7 +12,7 @@ from typing import Any, cast, List, Optional, Self
 from unittest.mock import Mock
 
 import click
-from sdbus import (  #pyright: ignore [reportMissingModuleSource]
+from sdbus import (  # pyright: ignore [reportMissingModuleSource]
     sd_bus_open_system,
     sd_bus_open_user,
     SdBus,

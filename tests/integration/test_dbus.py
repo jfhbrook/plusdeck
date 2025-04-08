@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-import pytest
-
 from tests.helpers import Cli
 
 
