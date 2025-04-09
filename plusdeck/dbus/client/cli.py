@@ -8,18 +8,16 @@ import shlex
 import shutil
 import subprocess
 import sys
-from typing import Any, cast, List, Optional, Self
-from unittest.mock import Mock
+from typing import List, Optional
 
 import click
 
 from plusdeck.cli import async_command, AsyncCommand, echo, LogLevel, OutputMode, STATE
 from plusdeck.client import State
-from plusdeck.config import Config
+from plusdeck.dbus.client import DbusClient
 from plusdeck.dbus.config import StagedConfig
-from plusdeck.dbus.domain import ConfigM, StateM, TimeoutM
+from plusdeck.dbus.domain import StateM, TimeoutM
 from plusdeck.dbus.error import handle_dbus_error
-from plusdeck.dbus.interface import DBUS_NAME, DbusInterface
 from plusdeck.dbus.select import (
     select_default_bus,
     select_session_bus,
@@ -27,31 +25,6 @@ from plusdeck.dbus.select import (
 )
 
 logger = logging.getLogger(__name__)
-
-
-class DbusClient(DbusInterface):
-    """
-    A DBus client for the Plus Deck 2C PC Cassette Deck.
-    """
-
-    def __init__(self: Self) -> None:
-        client = Mock(name="client", side_effect=NotImplementedError("client"))
-        self.subscribe = Mock(name="client.subscribe")
-        super().__init__(client)
-
-        cast(Any, self)._proxify(DBUS_NAME, "/")
-
-    async def staged_config(self: Self) -> StagedConfig:
-        """
-        Fetch the state of staged configuration changes.
-        """
-
-        active_config: Config = ConfigM.unpack(await self.config)
-
-        return StagedConfig(
-            target_config=Config.from_file(active_config.file),
-            active_config=active_config,
-        )
 
 
 @dataclass
