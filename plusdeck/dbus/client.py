@@ -17,6 +17,7 @@ from plusdeck.cli import async_command, AsyncCommand, echo, LogLevel, OutputMode
 from plusdeck.client import State
 from plusdeck.config import Config
 from plusdeck.dbus.config import StagedConfig
+from plusdeck.dbus.domain import ConfigM, StateM, TimeoutM
 from plusdeck.dbus.error import handle_dbus_error
 from plusdeck.dbus.interface import DBUS_NAME, DbusInterface
 from plusdeck.dbus.select import (
@@ -45,12 +46,10 @@ class DbusClient(DbusInterface):
         Fetch the state of staged configuration changes.
         """
 
-        file, port = await self.config
-
-        active_config: Config = cast(Any, Config)(file=file, port=port)
+        active_config: Config = ConfigM.unpack(await self.config)
 
         return StagedConfig(
-            target_config=Config.from_file(file),
+            target_config=Config.from_file(active_config.file),
             active_config=active_config,
         )
 
@@ -404,7 +403,7 @@ async def expect(client: DbusClient, state: State, timeout: Optional[float]) -> 
     Wait for an expected state
     """
 
-    ok = await client.wait_for(state.name, timeout if timeout is not None else -1.0)
+    ok = await client.wait_for(StateM.pack(state), TimeoutM.pack(timeout))
 
     if not ok:
         logger.info(f"Timed out after {timeout} seconds.")
@@ -422,7 +421,7 @@ async def subscribe(client: DbusClient, for_: Optional[float]) -> None:
     try:
         async with asyncio.timeout(for_):
             async for st in client.state:
-                echo(State[st])
+                echo(StateM.unpack(st))
     except TimeoutError:
         pass
 
