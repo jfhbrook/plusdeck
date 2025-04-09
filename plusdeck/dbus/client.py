@@ -12,11 +12,6 @@ from typing import Any, cast, List, Optional, Self
 from unittest.mock import Mock
 
 import click
-from sdbus import (  # pyright: ignore [reportMissingModuleSource]
-    sd_bus_open_system,
-    sd_bus_open_user,
-    SdBus,
-)
 
 from plusdeck.cli import async_command, AsyncCommand, echo, LogLevel, OutputMode, STATE
 from plusdeck.client import State
@@ -24,6 +19,11 @@ from plusdeck.config import Config
 from plusdeck.dbus.config import StagedConfig
 from plusdeck.dbus.error import handle_dbus_error
 from plusdeck.dbus.interface import DBUS_NAME, DbusInterface
+from plusdeck.dbus.select import (
+    select_default_bus,
+    select_session_bus,
+    select_system_bus,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -33,12 +33,12 @@ class DbusClient(DbusInterface):
     A DBus client for the Plus Deck 2C PC Cassette Deck.
     """
 
-    def __init__(self: Self, bus: Optional[SdBus] = None) -> None:
+    def __init__(self: Self) -> None:
         client = Mock(name="client", side_effect=NotImplementedError("client"))
         self.subscribe = Mock(name="client.subscribe")
         super().__init__(client)
 
-        cast(Any, self)._proxify(DBUS_NAME, "/", bus=bus)
+        cast(Any, self)._proxify(DBUS_NAME, "/")
 
     async def staged_config(self: Self) -> StagedConfig:
         """
@@ -60,7 +60,6 @@ class Obj:
     client: DbusClient
     log_level: LogLevel
     output: OutputMode
-    user: bool
 
 
 def pass_config(fn: AsyncCommand) -> AsyncCommand:
@@ -144,11 +143,14 @@ def warn_dirty() -> None:
     help="Output either human-friendly text or JSON",
 )
 @click.option(
-    "--user/--no-user", type=bool, default=False, help="Connect to the user bus"
+    "--user/--default",
+    type=click.BOOL,
+    default=None,
+    help="Connect to either the user or default bus",
 )
 @click.pass_context
 def main(
-    ctx: click.Context, log_level: LogLevel, output: OutputMode, user: bool
+    ctx: click.Context, log_level: LogLevel, output: OutputMode, user: Optional[bool]
 ) -> None:
     """
     Control your Plus Deck 2C Cassette Drive through dbus.
@@ -160,9 +162,15 @@ def main(
     echo.mode = output
 
     async def load() -> None:
-        bus: SdBus = sd_bus_open_user() if user else sd_bus_open_system()
-        client = DbusClient(bus)
-        ctx.obj = Obj(client=client, log_level=log_level, output=output, user=user)
+        if user:
+            select_session_bus()
+        elif user is None:
+            select_system_bus()
+        else:
+            select_default_bus()
+
+        client = DbusClient()
+        ctx.obj = Obj(client=client, log_level=log_level, output=output)
 
     asyncio.run(load())
 
