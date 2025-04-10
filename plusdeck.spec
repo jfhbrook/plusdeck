@@ -37,6 +37,28 @@ install -p -m 755 bin/plusdeck-dbus %{buildroot}%{_bindir}/plusdeck
 %{_bindir}/plusdeck
 
 %changelog
+* Thu Apr 10 2025 Josh Holbrook <josh.holbrook@gmail.com> 5.0.0-1
+- CLI changes:
+  - Main CLI respects `PLUSDECK_CONFIG_FILE` environment variable
+  - **BREAKING:** `plusdeck`, `plusdeckd` and `plusdeckctl` have been removed from the Python package in favor of `python3 -m plusdeck`, `python3 -m plusdeck.dbus.service` and `python3 -m plusdeck.dbus.client`, respectively
+  - Optional alias scripts for `plusdeck`, `plusdeck-service` and `plusdeck-dbus` included in the `./bin` folder
+  - DBus service CLI includes a `--system/--user` flag for explicitly selecting the bus
+  - **BREAKING:** DBus client CLI now uses `--user/--default` flag for selecting the bus
+- DBus API Changes:
+  - **BREAKING:** Root `plusdeck.dbus` no longer includes convenience exports
+  - Addition of `plusdeck.dbus.domain` module for domain mapping
+  - Addition of `plusdeck.dbus.select` module for selecting the DBus bus
+- Testing changes:
+  - Additional integration test for DBus
+  - Remove `tox` from development tools
+- Documentation improvements:
+  - Include generated DBus interface docs
+  - Fix links in documentation
+  - General overhaul based on lessons from `crystalfontz`
+- Packaging & Licensing
+  - **BREAKING:** Consistently licensed as MPL-2.0
+  - Improved PyPI classifiers
+
 * Sun Feb 09 2025 Josh Holbrook <josh.holbrook@gmail.com> 4.0.1-1
 - Dbus methods now marked as unprivileged
 - sdbus library errors have improved logging
