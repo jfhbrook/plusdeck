@@ -211,8 +211,16 @@ class StateM:
 
     @staticmethod
     def pack(state: State) -> StateT:
+        """
+        Pack `State` to `StateT`.
+        """
+
         return state.name
 
     @staticmethod
     def unpack(state: StateT) -> State:
+        """
+        Unpack `StateT` to `State`.
+        """
+
         return State[state]
