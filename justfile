@@ -55,9 +55,17 @@ clean-compile:
 run *argv:
   uv run {{ argv }}
 
-# Run the plusdeck cli
-start *argv:
-  uv run -- plusdeck {{ argv }}
+# Run plusdeck client cli
+client *argv:
+  uv run -- python -m plusdeck {{ argv }}
+
+# Run plusdeck.dbus.service cli
+service *argv:
+  uv run -- python -m plusdeck.dbus.service --user {{ argv }}
+
+# Run plusdeck.dbus.client cli
+dbus-client *argv:
+  uv run -- python -m plusdeck.dbus.client --user {{ argv }}
 
 #
 # Development tooling - linting, formatting, etc

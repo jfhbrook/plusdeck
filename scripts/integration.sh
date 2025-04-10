@@ -7,7 +7,7 @@ ARGV=()
 
 HELP='USAGE: ./scripts/integration.sh [OPTIONS] [COMPONENTS]
 
-Run integration tests for the supplied components. By default, runs cli tests.
+Run integration tests for the supplied components. By default, runs client tests.
 
 Components:
     client  Run plusdeck client integration tests
