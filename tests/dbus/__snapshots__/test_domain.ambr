@@ -1,0 +1,22 @@
+# serializer version: 1
+# name: test_domain_pack_unpack[1.0-OptFloatM]
+  1.0
+# ---
+# name: test_domain_pack_unpack[1.0-TimeoutM]
+  1.0
+# ---
+# name: test_domain_pack_unpack[None-OptFloatM]
+  -1.0
+# ---
+# name: test_domain_pack_unpack[None-TimeoutM]
+  -1.0
+# ---
+# name: test_domain_pack_unpack[State.PLAYING_A-StateM]
+  'PLAYING_A'
+# ---
+# name: test_domain_pack_unpack[entity5-ConfigM]
+  tuple(
+    '/etc/crystalfontz.yaml',
+    '/dev/ttyUSB1',
+  )
+# ---

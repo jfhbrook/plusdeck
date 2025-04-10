@@ -50,11 +50,6 @@ dbus = [
   "sdbus",
 ]
 
-[project.scripts]
-plusdeck = "plusdeck.cli:main"
-plusdeckd = "plusdeck.dbus.service:main"
-plusdeckctl = "plusdeck.dbus.client:main"
-
 [dependency-groups]
 dev = [
   "flake8",

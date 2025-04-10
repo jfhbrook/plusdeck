@@ -1,10 +1,10 @@
 # Command Line Interface
 
-The `plusdeck` CLI allows for direct control of the Plus Deck 2C over its serial port:
+This library has a CLI, which you can run like so:
 
 ```sh
-$ plusdeck --help
-Usage: plusdeck [OPTIONS] COMMAND [ARGS]...
+$ python3 -m plusdeck --help
+Usage: python3 -m plusdeck [OPTIONS] COMMAND [ARGS]...
 
   Control your Plus Deck 2C tape deck.
 
@@ -32,3 +32,11 @@ Commands:
 ```
 
 For more information, use the `--help` flag for any command.
+
+## Output Format
+
+This CLI supports two output formats: `text` and `json`. The former will output a human-readable format, and the latter will output JSON. This is mostly relevant for the `subscribe` command.
+
+## Installing the `plusdeck` Shim
+
+Included in this project is `./bin/plusdeck`, a script that you can add to your PATH for convenience.

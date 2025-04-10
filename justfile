@@ -55,9 +55,17 @@ clean-compile:
 run *argv:
   uv run {{ argv }}
 
-# Run the plusdeck cli
-start *argv:
-  uv run -- plusdeck {{ argv }}
+# Run plusdeck client cli
+client *argv:
+  uv run -- python -m plusdeck {{ argv }}
+
+# Run plusdeck.dbus.service cli
+service *argv:
+  uv run -- python -m plusdeck.dbus.service --user {{ argv }}
+
+# Run plusdeck.dbus.client cli
+dbus-client *argv:
+  uv run -- python -m plusdeck.dbus.client --user {{ argv }}
 
 #
 # Development tooling - linting, formatting, etc
@@ -79,18 +87,18 @@ check:
   uv run npx pyright@latest
 
 # Run tests with pytest
-test:
-  uv run pytest -vvv ./tests --ignore=./tests/test_integration.py
+test *argv:
+  uv run pytest {{ argv }} ./tests --ignore-glob='./tests/integration/**'
   @just clean-test
 
 # Update snapshots
 snap:
-  uv run pytest --snapshot-update ./tests
+  uv run pytest --snapshot-update ./tests --ignore-glob='./tests/integration/**'
   @just clean-test
 
 # Run integration tests
-integration:
-  uv run gaktest ./tests/test_integration.py
+integration *argv:
+  ./scripts/integration.sh {{ argv }}
 
 clean-test:
   rm -f pytest_runner-*.egg
@@ -175,14 +183,6 @@ check-main-branch:
 tag:
   ./scripts/tag.sh
 
-# Bundle the package for GitHub release
-bundle-gh-release:
-  ./scripts/bundle-gh-release.sh "$(./scripts/version.py)-$(./scripts/release-version.py)"
-
-# Clean up the release package
-clean-release:
-  rm -f "plusdeck-*-*.tar.gz"
-
 # Push main and tags
 push:
   git push origin main --follow-tags
@@ -216,12 +216,8 @@ publish:
   # Tag and push
   @just tag
   @just push
-  # Build package and bundle release
+  # Build package and cut github release
   if [[ "$(./scripts/release-version.py)" == '1' ]]; then just clean-build; fi
-  @just clean-release
-  if [[ "$(./scripts/release-version.py)" == '1' ]]; then just build; fi
-  @just bundle-gh-release
-  # Publish package and release
   @just gh-release
   if [[ "$(./scripts/release-version.py)" == '1' ]]; then just publish-pypi; fi
   # Update packages on COPR
@@ -231,7 +227,7 @@ publish:
   @just build-copr plusdeck
 
 # Clean up loose files
-clean: clean-venv clean-compile clean-test clean-build clean-release
+clean: clean-venv clean-compile clean-test clean-build
   rm -rf plusdeck.egg-info
   rm -f plusdeck/*.pyc
   rm -rf plusdeck/__pycache__

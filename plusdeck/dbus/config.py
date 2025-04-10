@@ -1,6 +1,6 @@
 from dataclasses import asdict, dataclass, fields
 import json
-from typing import Any, Dict, Generic, Literal, Self, Tuple, TypeVar
+from typing import Any, Dict, Generic, Literal, Self, TypeVar
 
 import yaml
 
@@ -10,10 +10,6 @@ except ImportError:
     from yaml import Dumper
 
 from plusdeck.config import Config
-
-File = str
-Port = str
-ConfigStruct = Tuple[File, Port]
 
 StageType = Literal["set"] | Literal["unset"] | None
 T = TypeVar("T")
