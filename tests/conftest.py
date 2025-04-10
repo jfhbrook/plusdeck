@@ -41,12 +41,8 @@ def environment(monkeypatch, config_file: str, port: str) -> Dict[str, str]:
 def config_file(monkeypatch) -> str:
     if "PLUSDECK_CONFIG_FILE" in os.environ:
         return os.environ["PLUSDECK_CONFIG_FILE"]
+
     path = Path(__file__).parent / "fixtures/crystalfontz.yaml"
-
-    def default_file() -> str:
-        return str(path)
-
-    monkeypatch.setattr(plusdeck.config, "default_file", default_file)
 
     return str(path)
 
