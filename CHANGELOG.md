@@ -1,3 +1,7 @@
+2025/04/10 Version 5.0.0-2
+--------------------------
+- Fix error in `plusdeck.spec`
+
 2025/04/10 Version 5.0.0-1
 ------------------------
 - CLI changes:
