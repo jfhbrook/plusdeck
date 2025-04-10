@@ -10,6 +10,12 @@
 pip install plusdeck
 ```
 
+To install support for DBus, run:
+
+```sh
+pip install plusdeck[dbus]
+```
+
 This package contains the Python library, with the CLIs exposed with Python's `-m` flag (ie. `python3 -m plusdeck`).
 
 ## COPR Packages
