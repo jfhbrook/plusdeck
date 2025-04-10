@@ -38,6 +38,9 @@ install -p -m 755 bin/plusdeck-dbus %{buildroot}%{_bindir}/plusdeck
 %{_bindir}/plusdeck
 
 %changelog
+* Thu Apr 10 2025 Josh Holbrook <josh.holbrook@gmail.com> 5.0.0-2
+- Fix error in `plusdeck.spec`
+
 * Thu Apr 10 2025 Josh Holbrook <josh.holbrook@gmail.com> 5.0.0-1
 - CLI changes:
   - Main CLI respects `PLUSDECK_CONFIG_FILE` environment variable
