@@ -9,7 +9,7 @@ release = "1"
 
 [project]
 name = "plusdeck"
-version = "4.0.1"
+version = "5.0.0"
 authors = [
   {name = "Josh Holbrook", email = "josh.holbrook@gmail.com"}
 ]

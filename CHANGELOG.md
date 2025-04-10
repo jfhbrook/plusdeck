@@ -1,4 +1,4 @@
-yyyy/mm/dd Version 5.0.0-1
+2025/04/10 Version 5.0.0-1
 ------------------------
 - CLI changes:
   - Main CLI respects `PLUSDECK_CONFIG_FILE` environment variable
