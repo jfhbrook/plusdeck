@@ -193,7 +193,7 @@ publish-pypi: build
 
 # Create a GitHub release
 gh-release:
-  bash ./scripts/gh-release.sh "$(python ./scripts/version.py)-$(python ./scripts/release-version.py)"
+  bash ./scripts/gh-release.sh "$(python3 ./scripts/version.py)-$(python3 ./scripts/release-version.py)"
 
 # Apply a COPR package configuration
 apply-copr package:
