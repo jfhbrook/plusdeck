@@ -6,7 +6,7 @@ After=dbus.socket
 [Service]
 Type=dbus
 BusName=org.jfhbrook.plusdeck
-ExecStart=/usr/bin/plusdeckd
+ExecStart=/usr/bin/python3 -m plusdeck.dbus.service --system
 Restart=on-failure
 
 [Install]
