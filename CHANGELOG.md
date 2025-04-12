@@ -1,4 +1,4 @@
-yyyy/mm/dd Version x.y.z-1
+2025/04/12 Version 5.0.1-1
 --------------------------
 - **BUGFIX:** Add main entry point for serial client
 - Add `--version` CLI flag

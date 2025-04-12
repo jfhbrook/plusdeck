@@ -5,11 +5,11 @@ build-backend = "setuptools.build_meta"
 [tool.rpm]
 # Generally this is "1", but can be incremented to roll up bugfixes in the
 # top-level `plusdeck` Fedora package.
-release = "2"
+release = "1"
 
 [project]
 name = "plusdeck"
-version = "5.0.0"
+version = "5.0.1"
 authors = [
   {name = "Josh Holbrook", email = "josh.holbrook@gmail.com"}
 ]
