@@ -38,6 +38,10 @@ install -p -m 755 bin/plusdeck-dbus %{buildroot}%{_bindir}/plusdeck
 %{_bindir}/plusdeck
 
 %changelog
+* Sat Apr 12 2025 Josh Holbrook <josh.holbrook@gmail.com> 5.0.1-1
+- **BUGFIX:** Add main entry point for serial client
+- Add `--version` CLI flag
+
 * Thu Apr 10 2025 Josh Holbrook <josh.holbrook@gmail.com> 5.0.0-2
 - Fix error in `plusdeck.spec`
 
