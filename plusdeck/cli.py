@@ -202,6 +202,7 @@ def pass_config(fn: Callable[..., R]) -> Callable[..., R]:
     default="text",
     help="Output either human-friendly text or JSON",
 )
+@click.version_option()
 @click.pass_context
 def main(
     ctx: click.Context,
